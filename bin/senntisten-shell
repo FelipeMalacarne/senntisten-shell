@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+quickshell="${SENNTISTEN_QUICKSHELL:-quickshell}"
+if ! command -v -- "$quickshell" >/dev/null 2>&1; then
+  printf 'senntisten-shell: Quickshell executable not found: %s. Run nix develop or set SENNTISTEN_QUICKSHELL.\n' "$quickshell" >&2
+  exit 127
+fi
+
+source_dir="${SENNTISTEN_SOURCE_DIR:-$(dirname -- "${BASH_SOURCE[0]}")/../shell}"
+if ! source_dir="$(CDPATH='' cd -- "$source_dir" && pwd -P)"; then
+  printf 'senntisten-shell: cannot read source directory; check SENNTISTEN_SOURCE_DIR.\n' >&2
+  exit 1
+fi
+if [[ ! -f "$source_dir/shell.qml" || ! -r "$source_dir/shell.qml" ]]; then
+  printf 'senntisten-shell: readable shell.qml not found in %s\n' "$source_dir" >&2
+  exit 1
+fi
+umask 077
+if [[ ${SENNTISTEN_STATE_DIR+x} ]]; then
+  state_dir="$SENNTISTEN_STATE_DIR"
+  if [[ $state_dir != /* ]]; then
+    printf 'senntisten-shell: SENNTISTEN_STATE_DIR must be an absolute, non-empty path.\n' >&2
+    exit 1
+  fi
+elif [[ ${XDG_STATE_HOME:-} == /* ]]; then
+  state_dir="$XDG_STATE_HOME/senntisten-shell"
+else
+  if [[ ${HOME:-} != /* ]]; then
+    printf 'senntisten-shell: HOME must be absolute when XDG_STATE_HOME is not absolute; or set SENNTISTEN_STATE_DIR.\n' >&2
+    exit 1
+  fi
+  state_dir="$HOME/.local/state/senntisten-shell"
+fi
+if ! mkdir -p -- "$state_dir"; then
+  printf 'senntisten-shell: cannot create state directory: %s\n' "$state_dir" >&2
+  exit 1
+fi
+if [[ ! -d "$state_dir" || ! -w "$state_dir" || ! -x "$state_dir" ]]; then
+  printf 'senntisten-shell: state directory is not writable/searchable: %s\n' "$state_dir" >&2
+  exit 1
+fi
+export SENNTISTEN_STATE_DIR="$state_dir"
+
+export QT_QUICK_CONTROLS_STYLE=Basic
+# Foreground only: no session services, config installation, or state-file writes.
+exec "$quickshell" --path "$source_dir" --no-duplicate "$@"
