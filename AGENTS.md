@@ -1,9 +1,11 @@
 # Senntisten Shell
 
-Personal, Nix-first Quickshell desktop shell for Felipe. The first MVP is a
-standalone **normal window** containing a compact bar and theme playground.
-It must coexist with Noctalia/Caelestia without claiming layer-shell space,
-notifications, locking, global shortcuts, or session startup.
+Personal, Nix-first Quickshell desktop shell for Felipe. The usable MVP is a
+real Hyprland bar and searchable application launcher, with the tested appearance
+window retained as a settings tool. A separate playground mode supports isolated
+component development. Desktop mode may create its own layer-shell surfaces;
+it must not stop Noctalia/Caelestia, claim notifications or locking, register global
+shortcuts, or change session startup without explicit activation approval.
 
 ## Boundaries
 
@@ -34,10 +36,13 @@ notifications, locking, global shortcuts, or session startup.
 
 ## MVP acceptance
 
-1. Standalone window opens with compact bar and expandable appearance panel.
-2. Catppuccin Mocha and Gruvbox switch all shared components without restart.
-3. Selected appearance survives restart, with safe failure/unknown-state handling.
-4. QML edits hot-reload without a Nix rebuild.
-5. Keyboard navigation and narrow-window behavior are usable.
-6. Nix development/build commands and automated checks work.
-7. Existing desktop provider and its state remain unchanged.
+1. Desktop mode provides a real per-monitor bar with live workspaces, clock, tray,
+   audio controls, and an application-launcher entry point.
+2. The launcher searches real desktop entries and supports keyboard/mouse activation.
+3. Catppuccin Mocha and Gruvbox update the bar, launcher, and appearance window live.
+4. Appearance persists with safe failure/unknown-state handling and hot reload.
+5. Closing the appearance tool does not terminate desktop mode.
+6. A no-reservation bottom-bar preview can coexist with the configured shell.
+7. Nix development/build commands and automated checks work.
+8. Provider activation, lock/notification replacement, and startup changes remain
+   explicit separate decisions; do not silently stop Noctalia.

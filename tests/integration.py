@@ -19,6 +19,8 @@ class RunningShell:
         self.temp = tempfile.TemporaryDirectory(prefix="senntisten-test-")
         self.base = Path(self.temp.name)
         self.source = self.base / "shell"
+        self.entry = self.source / "PlaygroundRoot.qml"
+        self.target = "senntisten"
         shutil.copytree(ROOT / "shell", self.source)
         self.state = self.base / "state"
         self.state.mkdir(mode=0o700)
@@ -46,7 +48,7 @@ class RunningShell:
     def start(self):
         self.log = (self.base / "quickshell.log").open("w+")
         self.process = subprocess.Popen(
-            [QS, "--no-color", "--path", str(self.source)],
+            [QS, "--no-color", "--path", str(self.entry)],
             env=self.env, stdout=self.log, stderr=subprocess.STDOUT,
         )
         return self.wait_for(lambda state: state.get("ready"))
@@ -58,7 +60,7 @@ class RunningShell:
 
     def call(self, function, *arguments):
         result = subprocess.run(
-            [QS, "ipc", "--path", str(self.source), "call", "senntisten", function,
+            [QS, "ipc", "--path", str(self.entry), "call", self.target, function,
              *(str(argument).lower() if isinstance(argument, bool) else str(argument)
                for argument in arguments)],
             env=self.env, capture_output=True, text=True, timeout=3,
@@ -109,7 +111,7 @@ class RunningShell:
 class ShellIntegration(unittest.TestCase):
     def launch(self, initial_state=None):
         self.assertTrue(QS, "Quickshell must be available: run this inside nix develop")
-        self.assertTrue((ROOT / "shell/shell.qml").is_file(), "The standalone QML entry point must exist")
+        self.assertTrue((ROOT / "shell/PlaygroundRoot.qml").is_file(), "The standalone QML entry point must exist")
         shell = RunningShell(initial_state)
         self.addCleanup(shell.close)
         shell.start()
@@ -214,6 +216,36 @@ class ShellIntegration(unittest.TestCase):
         self.assertEqual(shell.call("theme", "gruvbox"), "true")
         shell.wait_for(lambda state: state["saveStatus"] == "saved", timeout=3)
         self.assertEqual(json.loads(shell.state_file.read_text())["theme"], "gruvbox")
+
+    def test_embedded_appearance_close_keeps_its_host_running(self):
+        shell = RunningShell()
+        self.addCleanup(shell.close)
+        shell.entry = shell.source / "SettingsHost.qml"
+        shell.target = "test-host"
+        shell.entry.write_text("""import QtQuick
+import Quickshell
+import Quickshell.Io
+import "."
+import "services"
+ShellRoot {
+    App {
+        id: appearance
+        Component.onCompleted: if ("standalone" in appearance) appearance.standalone = false
+    }
+    IpcHandler {
+        target: "test-host"
+        function status(): string { return JSON.stringify({ ready: Theme.ready, visible: appearance.visible }); }
+        function closeAppearance(): void { appearance.visible = false; appearance.closed(); }
+        function showAppearance(): void { appearance.visible = true; }
+    }
+}
+""")
+        shell.start()
+        shell.call("closeAppearance")
+        shell.wait_for(lambda state: not state["visible"])
+        shell.call("showAppearance")
+        shell.wait_for(lambda state: state["visible"])
+        self.assertIsNone(shell.process.poll())
 
     def test_first_launch_opens_a_themed_window_without_writing_state(self):
         shell = self.launch()

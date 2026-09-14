@@ -5,15 +5,19 @@ import "services"
 
 FloatingWindow {
     id: window
+    property bool standalone: true
     title: "Senntisten · Theme playground"
     implicitWidth: 1080
     implicitHeight: 820
     minimumSize: Qt.size(620, 480)
     color: Theme.colors.background
-    onClosed: Qt.quit()
+    onClosed: if (standalone) Qt.quit()
     Shortcut {
         sequence: "Ctrl+Q"
-        onActivated: Qt.quit()
+        onActivated: {
+            if (window.standalone) Qt.quit();
+            else window.visible = false;
+        }
     }
 
     // This MVP owns only a normal window, never Quickshell's layer-shell reload popup.
@@ -35,6 +39,7 @@ FloatingWindow {
 
     IpcHandler {
         target: "senntisten"
+        enabled: window.standalone
         function theme(id: string): bool {
             return Theme.selectTheme(id);
         }

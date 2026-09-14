@@ -31,9 +31,10 @@ function fixture(t) {
   mkdirSync(source, { recursive: true });
   mkdirSync(home);
   writeFileSync(path.join(source, "shell.qml"), "// Launcher fixture; never executed as QML.\n");
+  writeFileSync(path.join(source, "PlaygroundRoot.qml"), "// Alternate entrypoint fixture.\n");
   if (existsSync(projectLauncher)) copyFileSync(projectLauncher, launcher);
   // Observe the external process boundary without opening a real desktop window.
-  writeFileSync(quickshell, `#!${process.execPath}\nconst keys = ["SENNTISTEN_STATE_DIR", "QT_QUICK_CONTROLS_STYLE", "QT_QUICK_BACKEND", "QSG_RHI_BACKEND"]; const env = Object.fromEntries(keys.filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]])); console.log(JSON.stringify({ args: process.argv.slice(2), env }));\nprocess.exit(Number(process.env.FAKE_EXIT ?? 0));\n`, { mode: 0o755 });
+  writeFileSync(quickshell, `#!${process.execPath}\nconst keys = ["SENNTISTEN_STATE_DIR", "SENNTISTEN_MODE", "SENNTISTEN_PREVIEW", "QT_QUICK_CONTROLS_STYLE", "QT_QUICK_BACKEND", "QSG_RHI_BACKEND"]; const env = Object.fromEntries(keys.filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]])); console.log(JSON.stringify({ args: process.argv.slice(2), env }));\nprocess.exit(Number(process.env.FAKE_EXIT ?? 0));\n`, { mode: 0o755 });
   const env = { ...process.env };
   for (const key of Object.keys(env)) {
     if (key.startsWith("SENNTISTEN_") || key.startsWith("QT_") || key.startsWith("QSG_")) delete env[key];
@@ -67,6 +68,46 @@ test("process-boundary diagnostics omit unrelated environment values", (t) => {
   const f = fixture(t);
   const result = launched(f.run([], { UNRELATED_PRIVATE_VALUE: "fixture-only" }));
   assert.equal(result.env.UNRELATED_PRIVATE_VALUE, undefined);
+});
+
+test("defaults to a real desktop and gives the playground a separate configuration identity", (t) => {
+  const f = fixture(t);
+  const desktop = launched(f.run());
+  assert.equal(desktop.env.SENNTISTEN_MODE, "desktop");
+  assert.equal(desktop.env.SENNTISTEN_PREVIEW, "0");
+  const playground = launched(f.run(["--playground", "--no-color"]));
+  assert.equal(playground.env.SENNTISTEN_MODE, "playground");
+  assert.deepEqual(playground.args, ["--path", path.join(f.source, "PlaygroundRoot.qml"), "--no-duplicate", "--no-color"]);
+  const preview = launched(f.run(["--preview"]));
+  assert.equal(preview.env.SENNTISTEN_MODE, "desktop");
+  assert.equal(preview.env.SENNTISTEN_PREVIEW, "1");
+  assert.deepEqual(preview.args, ["--path", f.source, "--no-duplicate"]);
+});
+
+test("mode help works without Quickshell or filesystem writes", (t) => {
+  const f = fixture(t);
+  const result = f.run(["--help"], { SENNTISTEN_QUICKSHELL: "/not/installed" });
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /Senntisten/);
+  assert.match(result.stdout, /--preview/);
+  assert.match(result.stdout, /--playground/);
+  assert.deepEqual(readdirSync(f.home), []);
+});
+
+test("rejects invalid or conflicting mode selections without startup writes", (t) => {
+  const f = fixture(t);
+  for (const [args, env] of [
+    [[], { SENNTISTEN_MODE: "unknown" }],
+    [[], { SENNTISTEN_MODE: "" }],
+    [[], { SENNTISTEN_PREVIEW: "yes" }],
+    [["--desktop", "--playground"], {}],
+    [["--preview", "--desktop"], {}],
+  ]) {
+    const result = f.run(args, env);
+    assert.equal(result.status, 2);
+    assert.match(result.stderr, /mode|preview/i);
+    assert.deepEqual(readdirSync(f.home), []);
+  }
 });
 
 test("adds duplicate protection without daemonizing", (t) => {

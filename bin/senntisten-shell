@@ -1,6 +1,38 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+mode="${SENNTISTEN_MODE-desktop}"
+preview="${SENNTISTEN_PREVIEW-0}"
+case "${1-}" in
+  --help|-h)
+    printf '%s\n' \
+      'Senntisten Shell' \
+      'Usage: senntisten-shell [MODE] [quickshell options]' \
+      '  --desktop     Real bar and launcher (default)' \
+      '  --preview     Bottom bar without reserved space; keeps the current shell' \
+      '  --playground  Isolated appearance/component window' \
+      '  --help        Show this help without starting or writing state' \
+      'Put the mode first. No startup services or desktop provider are changed.'
+    exit 0 ;;
+  --desktop) mode=desktop; preview=0; shift ;;
+  --playground) mode=playground; preview=0; shift ;;
+  --preview) mode=desktop; preview=1; shift ;;
+esac
+case "${1-}" in
+  --desktop|--playground|--preview)
+    printf 'senntisten-shell: choose only one leading mode option.\n' >&2
+    exit 2 ;;
+esac
+if [[ $mode != desktop && $mode != playground ]]; then
+  printf 'senntisten-shell: invalid mode: %s (expected desktop or playground).\n' "$mode" >&2
+  exit 2
+fi
+if [[ $preview != 0 && $preview != 1 ]]; then
+  printf 'senntisten-shell: invalid preview value: %s (expected 0 or 1).\n' "$preview" >&2
+  exit 2
+fi
+export SENNTISTEN_MODE="$mode" SENNTISTEN_PREVIEW="$preview"
+
 quickshell="${SENNTISTEN_QUICKSHELL:-quickshell}"
 if ! command -v -- "$quickshell" >/dev/null 2>&1; then
   printf 'senntisten-shell: Quickshell executable not found: %s. Run nix develop or set SENNTISTEN_QUICKSHELL.\n' "$quickshell" >&2
@@ -12,8 +44,14 @@ if ! source_dir="$(CDPATH='' cd -- "$source_dir" && pwd -P)"; then
   printf 'senntisten-shell: cannot read source directory; check SENNTISTEN_SOURCE_DIR.\n' >&2
   exit 1
 fi
-if [[ ! -f "$source_dir/shell.qml" || ! -r "$source_dir/shell.qml" ]]; then
-  printf 'senntisten-shell: readable shell.qml not found in %s\n' "$source_dir" >&2
+entry="$source_dir"
+entry_file="$source_dir/shell.qml"
+if [[ $mode == playground ]]; then
+  entry="$source_dir/PlaygroundRoot.qml"
+  entry_file="$entry"
+fi
+if [[ ! -f "$entry_file" || ! -r "$entry_file" ]]; then
+  printf 'senntisten-shell: readable %s not found in %s\n' "${entry_file##*/}" "$source_dir" >&2
   exit 1
 fi
 umask 077
@@ -44,4 +82,4 @@ export SENNTISTEN_STATE_DIR="$state_dir"
 
 export QT_QUICK_CONTROLS_STYLE=Basic
 # Foreground only: no session services, config installation, or state-file writes.
-exec "$quickshell" --path "$source_dir" --no-duplicate "$@"
+exec "$quickshell" --path "$entry" --no-duplicate "$@"
