@@ -84,8 +84,8 @@ ShellRoot {
             id: loader
             x: root.scene === "controls" ? 20 : 0
             y: root.scene === "controls" ? 20 : 0
-            width: parent.width - x * 2
-            height: root.scene === "controls" && item ? item.implicitHeight : parent.height
+            width: root.scene === "controls" && item ? Math.min(item.implicitWidth, parent.width - x * 2) : parent.width - x * 2
+            height: root.scene === "controls" && item ? Math.min(item.implicitHeight, parent.height - y * 2) : parent.height
             active: root.scene !== "settings"
             Component.onCompleted: {
                 if (root.scene === "bar")

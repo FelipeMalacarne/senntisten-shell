@@ -11,6 +11,7 @@ make ui-check
 make ui-check UI_ARGS='--suite launcher --suite settings'
 make ui-inspect UI_ARGS='--scene launcher --actions tests/ui-actions/launcher.json'
 make ui-inspect UI_ARGS='--scene controls --actions tests/ui-actions/controls.json'
+make ui-inspect UI_ARGS='--scene controls --width 340 --height 320 --actions tests/ui-actions/controls-short.json'
 make ui-inspect UI_ARGS='--scene settings --actions tests/ui-actions/settings.json'
 make ui-inspect UI_ARGS='--scene bar --actions tests/ui-actions/bar.json'
 ```

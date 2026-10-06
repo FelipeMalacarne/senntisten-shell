@@ -58,9 +58,11 @@ ShellRoot {
             function init() {
                 executed = executed.concat([qtest_results.functionName]);
                 window.contentItem.width = 380;
+                panel.height = Qt.binding(() => panel.implicitHeight);
                 services.audioAvailable = true;
                 services.volume = 0.42;
                 services.muted = false;
+                panel.focusInitial(false);
                 settingsSpy.clear();
                 closeSpy.clear();
             }
@@ -143,6 +145,38 @@ ShellRoot {
                     if (output)
                         image.save(output + "/orbit-controls-" + theme + ".png");
                 }
+            }
+            function test_slider_thumb_and_close_control_match_orbit() {
+                const slider = findChild(panel, "audioVolume");
+                compare(slider.background.height, 6, "The audio track must not stretch to the control height");
+                compare(slider.handle.width, 18);
+                compare(slider.handle.height, 18);
+                const close = findChild(panel, "audioClose");
+                compare(close.width, 32);
+                compare(close.background.border.width, 0);
+                compare(close.contentItem.name, "close");
+                compare(panel.implicitWidth, 300);
+                services.audioAvailable = false;
+                tryCompare(findChild(panel, "audioOutputName"), "visible", false, 1000, "Unavailable output must not advertise a stale device");
+            }
+            function test_short_controls_scroll_and_tab_reveals_enabled_actions() {
+                panel.height = 280;
+                const scroll = findChild(panel, "quickControlsScroll");
+                verify(scroll !== null, "Short screens need a real scroll viewport");
+                tryVerify(() => scroll.contentItem.contentHeight > scroll.contentItem.height);
+                panel.focusInitial(false);
+                compare(findChild(panel, "audioVolume").activeFocus, true);
+                for (const name of ["audioDecrease", "audioMute", "audioIncrease", "quickSettings", "audioClose"]) {
+                    keyClick(Qt.Key_Tab);
+                    const control = findChild(panel, name);
+                    tryCompare(control, "activeFocus", true);
+                    tryVerify(() => {
+                        const viewport = name === "audioClose" ? panel : scroll.contentItem;
+                        const p = control.mapToItem(viewport, 0, 0);
+                        return p.y >= 0 && p.y + control.height <= viewport.height + 1;
+                    }, 1000, name + " must be revealed by Tab");
+                }
+                panel.height = Qt.binding(() => panel.implicitHeight);
             }
         }
     }

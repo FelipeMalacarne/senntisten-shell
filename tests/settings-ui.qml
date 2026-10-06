@@ -102,6 +102,20 @@ ShellRoot {
                 compare(heading.font.family, "DejaVu Serif");
                 verify(heading.font.pixelSize >= 28);
             }
+            function test_orbit_header_navigation_and_planned_action_alignment() {
+                const close = item("themeClose");
+                compare(close.width, 32);
+                compare(close.contentItem.name, "close");
+                compare(close.background.border.width, 0);
+                verify(item("settingsDistroMark").width >= 16);
+                verify(!item("settingsAccessibility").enabled);
+                for (const name of ["settingsAppearance", "settingsDesktop", "settingsLauncher", "settingsAccessibility"]) {
+                    const icon = findChild(item(name), "settingsSectionIcon");
+                    verify(icon !== null, "Navigation uses the shared local vector vocabulary");
+                }
+                const actions = [item("settings-wallpaper"), item("settings-font"), item("settings-density")];
+                tryVerify(() => actions.every(action => Math.abs(action.width - actions[0].width) <= 1 && Math.abs(action.mapToItem(settings(), 0, 0).x - actions[0].mapToItem(settings(), 0, 0).x) <= 1));
+            }
 
             function test_sidebar_and_planned_preferences_are_explicitly_disabled() {
                 const appearance = item("settingsAppearance");
@@ -124,8 +138,18 @@ ShellRoot {
                     const scroll = item("settingsScroll");
                     tryCompare(settings(), "wide", width >= 640);
                     tryVerify(() => scroll.contentItem.contentWidth <= scroll.contentItem.width + 1);
-                    for (const name of ["themeClose", "themeSaveStatus", "settingsAppearance", "settingsDesktop", "settingsLauncher"])
+                    for (const name of ["themeClose", "themeSaveStatus", "settingsAppearance"])
                         tryVerify(() => fits(item(name), settings()), 1000, name + " must fit at " + width);
+                    const navigation = item("settingsNavigation");
+                    for (const name of ["settingsDesktop", "settingsLauncher", "settingsAccessibility"]) {
+                        const section = item(name);
+                        if (!settings().wide) {
+                            const p = section.mapToItem(navigation.contentItem, 0, 0);
+                            navigation.contentX = Math.max(0, Math.min(navigation.contentWidth - navigation.width, p.x));
+                        }
+                        tryVerify(() => fits(section, settings()), 1000, name + " must be reachable at " + width);
+                    }
+                    navigation.contentX = 0;
                     for (const name of ["theme-catppuccin-mocha", "theme-gruvbox", "reducedMotionSwitch", "settings-wallpaper", "settings-font", "settings-density"]) {
                         const control = item(name);
                         tryVerify(() => {

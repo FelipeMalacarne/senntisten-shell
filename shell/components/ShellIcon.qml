@@ -9,6 +9,7 @@ Item {
     implicitWidth: 20
     implicitHeight: 20
     Accessible.ignored: true
+    layer.enabled: true
 
     readonly property string geometry: {
         switch (name) {
@@ -40,6 +41,10 @@ Item {
             return "M3 9a15 15 0 0 1 18 0M6 12a10 10 0 0 1 12 0m-9 3a5 5 0 0 1 6 0M12 19h.01";
         case "bluetooth":
             return "M7 7l10 10-5 5V2l5 5L7 17";
+        case "sun":
+            return "M12 8a4 4 0 1 0 0 8 4 4 0 1 0 0-8Z M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5";
+        case "accessibility":
+            return "M12 3a2 2 0 1 0 0 4 2 2 0 1 0 0-4Z M4 9l8 2 8-2M12 11v5m0 0-4 6m4-6 4 6";
         default:
             return "";
         }

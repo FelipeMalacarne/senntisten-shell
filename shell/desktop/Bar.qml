@@ -65,8 +65,8 @@ PanelWindow {
         anchor.item: content.audioAnchor
         anchor.edges: root.previewMode ? Edges.Top | Edges.Right : Edges.Bottom | Edges.Right
         anchor.gravity: root.previewMode ? Edges.Top | Edges.Left : Edges.Bottom | Edges.Left
-        implicitWidth: Math.min(340, root.screen ? root.screen.width - 16 : 340)
-        implicitHeight: audioPanel.implicitHeight
+        implicitWidth: Math.min(Theme.metrics.controlsWidth, root.screen ? root.screen.width - 16 : Theme.metrics.controlsWidth)
+        implicitHeight: Math.min(audioPanel.implicitHeight, root.screen ? root.screen.height - root.implicitHeight - 16 : audioPanel.implicitHeight)
         color: "transparent"
         onVisibleChanged: if (visible)
             audioPanel.focusInitial(false)

@@ -52,10 +52,16 @@ FocusScope {
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.leftMargin: root.wide ? Theme.metrics.panelPadding : 16
-            Layout.rightMargin: root.wide ? Theme.metrics.panelPadding : 16
-            Layout.preferredHeight: 52
+            Layout.leftMargin: root.wide ? Theme.metrics.panelPadding : Theme.metrics.narrowPadding
+            Layout.rightMargin: root.wide ? Theme.metrics.panelPadding : Theme.metrics.narrowPadding
+            Layout.preferredHeight: 44
             spacing: 12
+            DistroMark {
+                objectName: "settingsDistroMark"
+                Layout.preferredWidth: 18
+                Layout.preferredHeight: 18
+                Accessible.ignored: true
+            }
             SettingsLabel {
                 Layout.fillWidth: true
                 text: "Senntisten / Settings"
@@ -68,12 +74,10 @@ FocusScope {
                 font.pixelSize: 11
                 color: Theme.colors.accent
             }
-            ShellButton {
+            ShellIconButton {
                 id: closeButton
                 objectName: "themeClose"
                 text: "Close"
-                compact: true
-                quiet: true
                 Accessible.name: "Close Settings"
                 onClicked: root.closeRequested()
             }
@@ -96,7 +100,7 @@ FocusScope {
                 objectName: "settingsSidebar"
                 Layout.fillWidth: !root.wide
                 Layout.fillHeight: root.wide
-                Layout.preferredWidth: root.wide ? 180 : -1
+                Layout.preferredWidth: root.wide ? 170 : -1
                 implicitHeight: navigation.implicitHeight + 24
                 color: Theme.colors.background
 
@@ -117,39 +121,70 @@ FocusScope {
                         font.pixelSize: 10
                         font.letterSpacing: 1
                     }
-                    GridLayout {
+                    Flickable {
+                        id: navigationScroll
+                        objectName: "settingsNavigation"
                         Layout.fillWidth: true
-                        columns: root.wide ? 1 : 3
-                        columnSpacing: 6
-                        rowSpacing: 6
-                        Repeater {
-                            model: ["Appearance", "Desktop", "Launcher"]
-                            ShellButton {
-                                id: section
-                                required property string modelData
-                                required property int index
-                                objectName: "settings" + modelData
-                                Layout.fillWidth: true
-                                Layout.minimumWidth: 0
-                                Layout.preferredWidth: 1
-                                implicitHeight: 48
-                                leftPadding: 8
-                                rightPadding: 8
-                                text: modelData + (index === 0 ? "" : "\nPlanned")
-                                enabled: index === 0
-                                selected: index === 0
-                                selectedBackground: Theme.colors.elevated
-                                selectedForeground: Theme.colors.accent
-                                quiet: true
-                                borderless: !visualFocus
-                                contentItem: SettingsLabel {
-                                    text: section.text
-                                    font.pixelSize: root.wide ? 12 : 11
-                                    color: section.selected ? Theme.colors.accent : Theme.colors.muted
-                                    horizontalAlignment: root.wide ? Text.AlignLeft : Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
+                        implicitHeight: navigationButtons.implicitHeight
+                        contentWidth: navigationButtons.width
+                        contentHeight: height
+                        clip: true
+                        flickableDirection: Flickable.HorizontalFlick
+                        boundsBehavior: Flickable.StopAtBounds
+                        GridLayout {
+                            id: navigationButtons
+                            width: root.wide ? navigationScroll.width : implicitWidth
+                            columns: root.wide ? 1 : 4
+                            columnSpacing: 6
+                            rowSpacing: 6
+                            Repeater {
+                                model: ["Appearance", "Desktop", "Launcher", "Accessibility"]
+                                ShellButton {
+                                    id: section
+                                    required property string modelData
+                                    required property int index
+                                    objectName: "settings" + modelData
+                                    Layout.fillWidth: root.wide
+                                    Layout.minimumWidth: root.wide ? 0 : implicitWidth
+                                    implicitWidth: sectionContent.implicitWidth + leftPadding + rightPadding
+                                    implicitHeight: 40
+                                    leftPadding: 8
+                                    rightPadding: 8
+                                    text: modelData + (index === 0 ? "" : ", Planned")
+                                    Accessible.name: text
+                                    enabled: index === 0
+                                    selected: index === 0
+                                    selectedBackground: Theme.colors.elevated
+                                    selectedForeground: Theme.colors.accent
+                                    quiet: true
+                                    borderless: !visualFocus
+                                    contentItem: RowLayout {
+                                        id: sectionContent
+                                        spacing: 6
+                                        ShellIcon {
+                                            objectName: "settingsSectionIcon"
+                                            name: ["sun", "monitor", "search", "accessibility"][section.index]
+                                            color: section.selected ? Theme.colors.accent : Theme.colors.muted
+                                            Layout.preferredWidth: 14
+                                            Layout.preferredHeight: 14
+                                        }
+                                        SettingsLabel {
+                                            text: section.modelData
+                                            font.pixelSize: root.wide ? 10 : 11
+                                            color: section.selected ? Theme.colors.accent : Theme.colors.muted
+                                        }
+                                        Item {
+                                            Layout.fillWidth: root.wide
+                                        }
+                                        SettingsLabel {
+                                            visible: section.index !== 0
+                                            text: "Planned"
+                                            font.pixelSize: 7
+                                            color: Theme.colors.subtle
+                                        }
+                                    }
+                                    onClicked: root.focusInitial()
                                 }
-                                onClicked: root.focusInitial()
                             }
                         }
                     }
@@ -166,43 +201,18 @@ FocusScope {
                 }
             }
 
-            ScrollView {
+            ShellScrollView {
                 id: scroll
                 objectName: "settingsScroll"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Layout.minimumWidth: 0
                 Layout.minimumHeight: 0
-                clip: true
-                leftPadding: root.wide ? Theme.metrics.panelPadding : 16
-                rightPadding: leftPadding + (scrollbar.visible ? 10 : 0)
+                scrollbarName: "settingsScrollbar"
+                leftPadding: root.wide ? Theme.metrics.panelPadding : Theme.metrics.narrowPadding
+                rightPadding: leftPadding + (scroll.scrollBar.visible ? 10 : 0)
                 topPadding: Theme.metrics.panelPadding
                 bottomPadding: Theme.metrics.panelPadding
-                contentWidth: availableWidth
-
-                function reveal(item) {
-                    if (!item)
-                        return;
-                    const viewport = scroll.contentItem;
-                    const point = item.mapToItem(viewport.contentItem, 0, 0);
-                    const maximum = Math.max(0, viewport.contentHeight - viewport.height);
-                    if (point.y - 8 < viewport.contentY)
-                        viewport.contentY = Math.max(0, point.y - 8);
-                    else if (point.y + item.height + 8 > viewport.contentY + viewport.height)
-                        viewport.contentY = Math.min(maximum, point.y + item.height + 8 - viewport.height);
-                }
-
-                ScrollBar.vertical: ScrollBar {
-                    id: scrollbar
-                    objectName: "settingsScrollbar"
-                    policy: ScrollBar.AsNeeded
-                    contentItem: Rectangle {
-                        implicitWidth: 6
-                        radius: 3
-                        color: Theme.colors.muted
-                        opacity: scrollbar.pressed ? 0.9 : 0.45
-                    }
-                }
 
                 ColumnLayout {
                     width: scroll.availableWidth
@@ -254,7 +264,7 @@ FocusScope {
                                     Layout.fillWidth: true
                                     Layout.minimumWidth: 0
                                     Layout.preferredWidth: 1
-                                    implicitHeight: root.wide ? 172 : 140
+                                    implicitHeight: root.wide ? 164 : 140
                                     padding: 12
                                     themeId: modelData.id
                                     text: modelData.name
@@ -271,36 +281,72 @@ FocusScope {
                                     }
                                     contentItem: ColumnLayout {
                                         spacing: 10
-                                        Rectangle {
+                                        Item {
+                                            id: palettePreview
                                             Layout.fillWidth: true
                                             Layout.preferredHeight: root.wide ? 76 : 48
-                                            radius: 6
-                                            color: card.previewColors.background
                                             clip: true
+                                            Rectangle {
+                                                anchors.fill: parent
+                                                radius: 6
+                                                color: card.previewColors.background
+                                            }
+                                            Rectangle {
+                                                x: parent.width * 0.7
+                                                y: -width * 0.25
+                                                width: parent.width * 0.65
+                                                height: width
+                                                radius: width / 2
+                                                color: card.previewColors.accent
+                                                opacity: 0.15
+                                            }
+                                            Canvas {
+                                                anchors.fill: parent
+                                                onWidthChanged: requestPaint()
+                                                onHeightChanged: requestPaint()
+                                                onPaint: {
+                                                    const context = getContext("2d");
+                                                    context.reset();
+                                                    context.fillStyle = card.previewColors.accent;
+                                                    context.globalAlpha = 0.16;
+                                                    context.beginPath();
+                                                    context.moveTo(0, height);
+                                                    context.bezierCurveTo(width * 0.2, 0, width * 0.45, height * 0.25, width * 0.65, height * 0.8);
+                                                    context.bezierCurveTo(width * 0.8, height, width * 0.9, height * 0.9, width, height * 0.6);
+                                                    context.lineTo(width, height);
+                                                    context.closePath();
+                                                    context.fill();
+                                                }
+                                            }
                                             Rectangle {
                                                 width: parent.width
                                                 height: 8
-                                                color: card.previewColors.elevated
+                                                color: card.previewColors.surface
                                             }
                                             Rectangle {
-                                                x: parent.width * 0.15
-                                                y: 30
-                                                width: parent.width * 0.7
-                                                height: 90
-                                                radius: 45
-                                                rotation: -12
-                                                color: card.previewColors.accent
-                                                opacity: 0.4
-                                            }
-                                            Rectangle {
-                                                anchors.right: parent.right
-                                                anchors.bottom: parent.bottom
-                                                anchors.margins: 10
-                                                width: parent.width * 0.42
-                                                height: 40
+                                                x: parent.width * 0.1
+                                                y: 16
+                                                width: parent.width * 0.5
+                                                height: parent.height * 0.62
                                                 radius: 6
                                                 color: card.previewColors.surface
                                                 border.color: card.previewColors.border
+                                                Rectangle {
+                                                    x: 6
+                                                    y: 7
+                                                    width: parent.width - 12
+                                                    height: 4
+                                                    radius: 2
+                                                    color: card.previewColors.accent
+                                                }
+                                                Rectangle {
+                                                    x: 6
+                                                    y: 17
+                                                    width: parent.width - 12
+                                                    height: 4
+                                                    radius: 2
+                                                    color: card.previewColors.elevated
+                                                }
                                             }
                                         }
                                         RowLayout {
@@ -312,10 +358,13 @@ FocusScope {
                                                 font.pixelSize: 13
                                                 font.weight: Font.Medium
                                             }
-                                            SettingsLabel {
-                                                text: card.selected ? "Active" : ""
+                                            ShellIcon {
+                                                objectName: "themeActiveCheck"
+                                                name: "check"
+                                                opacity: card.selected ? 1 : 0
+                                                Layout.preferredWidth: 16
+                                                Layout.preferredHeight: 16
                                                 color: Theme.colors.accent
-                                                font.pixelSize: 10
                                             }
                                         }
                                         SettingsLabel {
@@ -323,6 +372,8 @@ FocusScope {
                                             text: card.description
                                             color: Theme.colors.muted
                                             font.pixelSize: 11
+                                            wrapMode: Text.NoWrap
+                                            elide: Text.ElideRight
                                         }
                                     }
                                 }
@@ -435,36 +486,40 @@ FocusScope {
             implicitHeight: 1
             color: Theme.colors.border
         }
-        SettingsLabel {
-            id: feedback
-            objectName: "themeSaveStatus"
+        Rectangle {
             Layout.fillWidth: true
-            Layout.margins: root.wide ? Theme.metrics.panelPadding : 16
-            Layout.topMargin: 12
-            Layout.bottomMargin: 12
-            text: {
-                if (!Theme.ready || Theme.saveStatus === "loading")
-                    return "Loading appearance...";
-                if (Theme.message)
-                    return Theme.message;
-                switch (Theme.saveStatus) {
-                case "saving":
-                    return "Saving appearance...";
-                case "saved":
-                    return "Appearance saved.";
-                case "error":
-                    return "Could not save appearance. Changes are not saved.";
-                case "blocked":
-                    return "Unsupported newer appearance schema. Saving is disabled.";
-                default:
-                    return "Changes are saved automatically.";
+            implicitHeight: feedback.implicitHeight + 24
+            color: Theme.colors.surface
+            SettingsLabel {
+                id: feedback
+                objectName: "themeSaveStatus"
+                x: root.wide ? Theme.metrics.panelPadding : Theme.metrics.narrowPadding
+                y: 12
+                width: parent.width - x * 2
+                text: {
+                    if (!Theme.ready || Theme.saveStatus === "loading")
+                        return "Loading appearance...";
+                    if (Theme.message)
+                        return Theme.message;
+                    switch (Theme.saveStatus) {
+                    case "saving":
+                        return "Saving appearance...";
+                    case "saved":
+                        return "Appearance saved.";
+                    case "error":
+                        return "Could not save appearance. Changes are not saved.";
+                    case "blocked":
+                        return "Unsupported newer appearance schema. Saving is disabled.";
+                    default:
+                        return "Changes are saved automatically.";
+                    }
                 }
+                color: Theme.saveStatus === "error" ? Theme.colors.error : Theme.saveStatus === "blocked" || Theme.saveStatus === "recovered" ? Theme.colors.warning : Theme.colors.muted
+                font.pixelSize: 11
+                wrapMode: Text.Wrap
+                elide: Text.ElideNone
+                Accessible.name: text
             }
-            color: Theme.saveStatus === "error" ? Theme.colors.error : Theme.saveStatus === "blocked" || Theme.saveStatus === "recovered" ? Theme.colors.warning : Theme.colors.muted
-            font.pixelSize: 11
-            wrapMode: Text.Wrap
-            elide: Text.ElideNone
-            Accessible.name: text
         }
     }
 

@@ -65,7 +65,7 @@ FocusScope {
         id: panel
         objectName: "launcherPanel"
         anchors.centerIn: parent
-        width: Math.max(0, Math.min(560, parent.width - 32))
+        width: Math.max(0, Math.min(Theme.metrics.launcherWidth, parent.width - 32))
         height: Math.max(0, Math.min(parent.height - 32, body.implicitHeight + padding * 2))
         padding: Theme.metrics.panelPadding
         background: Rectangle {
@@ -100,34 +100,19 @@ FocusScope {
                     font.pixelSize: 11
                     font.letterSpacing: 0.8
                 }
-                ShellButton {
+                ShellIconButton {
                     id: closeButton
                     objectName: "launcherClose"
                     text: "Close"
                     Accessible.name: "Close application launcher"
-                    compact: true
-                    implicitWidth: 32
-                    implicitHeight: 32
-                    padding: 6
-                    leftPadding: padding
-                    rightPadding: padding
-                    topPadding: padding
-                    bottomPadding: padding
                     contentItem: ShellIcon {
                         objectName: "launcherCloseIcon"
                         name: "close"
+                        color: Theme.colors.muted
                     }
-                    background: Rectangle {
-                        radius: Theme.metrics.controlRadius
-                        color: closeButton.down || closeButton.hovered || closeButton.activeFocus ? Theme.colors.overlay : Qt.rgba(0, 0, 0, 0)
-                    }
-                    ToolTip.visible: hovered
-                    ToolTip.text: "Close launcher"
                     onClicked: root.dismissed()
                     KeyNavigation.tab: searchField
                     KeyNavigation.backtab: list.currentItem || searchField
-                    Keys.onReturnPressed: root.dismissed()
-                    Keys.onEnterPressed: root.dismissed()
                 }
             }
             TextField {
@@ -139,9 +124,9 @@ FocusScope {
                 placeholderText: "Find an application"
                 Accessible.name: "Search applications"
                 font.family: Theme.typography.sans
-                font.pixelSize: 19
+                font.pixelSize: panel.width < 400 ? 17 : 19
                 leftPadding: 56
-                rightPadding: 40
+                rightPadding: 12
                 color: Theme.colors.text
                 placeholderTextColor: Theme.colors.muted
                 selectionColor: Theme.colors.accent
@@ -164,14 +149,6 @@ FocusScope {
                     height: 22
                     name: "search"
                     color: searchField.activeFocus ? Theme.colors.accent : Theme.colors.muted
-                    enabled: false
-                }
-                ShellIcon {
-                    anchors.right: parent.right
-                    anchors.rightMargin: 12
-                    anchors.verticalCenter: parent.verticalCenter
-                    name: "arrow"
-                    color: Theme.colors.accent
                     enabled: false
                 }
             }
@@ -335,7 +312,7 @@ FocusScope {
             ShellLabel {
                 objectName: "launcherHint"
                 Layout.fillWidth: true
-                text: "Up / Down navigate   Enter open   Tab focus   Esc close\nUp to 8 matches | Search to narrow results"
+                text: "Up / Down navigate   Enter open   Esc close"
                 font.family: Theme.typography.sans
                 font.pixelSize: 10
                 color: Theme.colors.muted

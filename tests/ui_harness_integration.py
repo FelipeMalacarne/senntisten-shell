@@ -152,7 +152,7 @@ class UiHarnessIntegration(unittest.TestCase):
         self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
         snapshot = self.snapshot(output, 0, "initial")
         panel = snapshot["controls"][0]["geometry"]
-        self.assertEqual((panel["x"], panel["y"], panel["width"]), (20, 20, 340))
+        self.assertEqual((panel["x"], panel["y"], panel["width"]), (20, 20, 300))
         self.assertLess(panel["height"], snapshot["viewport"]["height"] - 40)
 
     def test_save_failure_is_injected_after_load_and_remains_visible(self):

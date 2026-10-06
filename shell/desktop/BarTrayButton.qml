@@ -13,14 +13,25 @@ ShellButton {
     text: trayItem.title || trayItem.id
     compact: true
     quiet: true
-    width: 32
+    borderless: true
+    width: 28
+    height: 28
     leftPadding: 6
     rightPadding: 6
     primary: trayItem.status === Status.NeedsAttention
     Accessible.name: text
-    ToolTip.visible: hovered
-    ToolTip.delay: 500
-    ToolTip.text: trayItem.tooltipTitle || text
+    BarTooltip {
+        targetItem: root
+        text: root.trayItem.tooltipTitle || root.text
+        hovered: root.hovered
+        popAbove: root.popAbove
+    }
+    background: Rectangle {
+        radius: 6
+        color: root.down || root.hovered || root.visualFocus ? Theme.colors.elevated : "transparent"
+        border.width: root.visualFocus ? 2 : 0
+        border.color: Theme.colors.accent
+    }
 
     function openMenu() {
         if (!trayItem.hasMenu || !hostWindow)
@@ -62,14 +73,24 @@ ShellButton {
         implicitHeight: 20
         Image {
             id: icon
+            objectName: "trayIcon"
             anchors.centerIn: parent
-            width: 18
-            height: 18
+            width: 16
+            height: 16
             source: root.trayItem.icon
-            sourceSize.width: 18
-            sourceSize.height: 18
+            sourceSize.width: 16
+            sourceSize.height: 16
             fillMode: Image.PreserveAspectFit
             visible: status === Image.Ready
+        }
+        Rectangle {
+            visible: root.trayItem.status === Status.NeedsAttention
+            anchors.top: parent.top
+            anchors.right: parent.right
+            width: 4
+            height: 4
+            radius: 2
+            color: Theme.colors.warning
         }
         ShellLabel {
             anchors.centerIn: parent

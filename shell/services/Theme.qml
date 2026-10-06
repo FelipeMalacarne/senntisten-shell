@@ -15,8 +15,11 @@ Singleton {
             barHeight: 44,
             panelRadius: 21,
             panelPadding: 24,
+            narrowPadding: 16,
             controlRadius: 11,
-            resultHeight: 56
+            resultHeight: 56,
+            launcherWidth: 470,
+            controlsWidth: 300
         })
     readonly property var typography: ({
             sans: "DejaVu Sans",

@@ -297,6 +297,27 @@ ShellRoot {
                 compare(row.background.border.color.toString(), Theme.colors.border);
                 verify(row.background.color.toString() !== field.background.color.toString());
             }
+            function test_arrow_navigation_from_results_moves_keyboard_focus_with_selection() {
+                const list = findChild(launcher.item, "launcherResults");
+                keyClick(Qt.Key_Tab);
+                tryVerify(() => list.currentItem.activeFocus);
+                keyClick(Qt.Key_Down);
+                compare(launcher.item.currentIndex, 1);
+                tryVerify(() => list.currentItem.activeFocus, 1000, "Focus must follow the selected result, including Space activation");
+                keyClick(Qt.Key_Up);
+                compare(launcher.item.currentIndex, 0);
+                tryVerify(() => list.currentItem.activeFocus);
+            }
+            function test_orbit_compact_panel_and_close_control() {
+                const panel = findChild(launcher.item, "launcherPanel");
+                const close = findChild(launcher.item, "launcherClose");
+                compare(panel.width, 470);
+                compare(close.width, 32);
+                compare(close.background.border.width, 0);
+                compare(close.contentItem.name, "close");
+                const hints = findChild(launcher.item, "launcherHint");
+                verify(hints.text.indexOf("Search to narrow") < 0, "The footer should be concise rather than debug-like");
+            }
             function test_orbit_panel_gutters_columns_and_row_heights_are_shared() {
                 const panel = findChild(launcher.item, "launcherPanel");
                 const field = findChild(launcher.item, "launcherSearch");

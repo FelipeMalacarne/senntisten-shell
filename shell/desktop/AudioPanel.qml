@@ -11,8 +11,8 @@ Surface {
     signal closeRequested
     signal settingsRequested
     padding: Theme.metrics.panelPadding
-    implicitWidth: 340
-    implicitHeight: content.implicitHeight + topPadding + bottomPadding
+    implicitWidth: Theme.metrics.controlsWidth
+    implicitHeight: content.implicitHeight + header.implicitHeight + 12 + topPadding + bottomPadding
     Keys.onEscapePressed: root.closeRequested()
 
     function focusInitial(restoreSettingsFocus) {
@@ -30,10 +30,10 @@ Surface {
     }
 
     ColumnLayout {
-        id: content
-        width: parent.width
+        anchors.fill: parent
         spacing: 12
         RowLayout {
+            id: header
             Layout.fillWidth: true
             ShellLabel {
                 text: "YOUR DESKTOP"
@@ -43,243 +43,250 @@ Surface {
                 font.letterSpacing: 1.1
                 Layout.fillWidth: true
             }
-            ShellButton {
+            ShellIconButton {
                 id: closeButton
                 objectName: "audioClose"
-                text: "×"
-                compact: true
-                quiet: true
-                implicitWidth: 32
-                padding: 6
-                leftPadding: padding
-                rightPadding: padding
+                text: "Close Quick Controls"
                 Accessible.name: "Close Quick Controls"
                 onClicked: root.closeRequested()
-                contentItem: ShellIcon {
-                    name: "close"
-                }
             }
         }
-        ShellLabel {
-            text: "Your space"
-            font.family: Theme.typography.serif
-            font.pixelSize: 25
+        ShellScrollView {
+            id: scroll
+            objectName: "quickControlsScroll"
             Layout.fillWidth: true
-        }
-        ShellLabel {
-            text: Qt.formatDateTime(clock.date, "dddd, MMMM d")
-            color: Theme.colors.muted
-            font.pixelSize: 11
-            Layout.fillWidth: true
-        }
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 8
-            Repeater {
-                model: [
-                    {
-                        name: "quickNetwork",
-                        title: "Network",
-                        icon: "wifi",
-                        description: "Wi-Fi controls"
-                    },
-                    {
-                        name: "quickBluetooth",
-                        title: "Bluetooth",
-                        icon: "bluetooth",
-                        description: "Device controls"
-                    }
-                ]
-                ShellButton {
-                    required property var modelData
-                    objectName: modelData.name
-                    text: modelData.title
-                    enabled: false
+            Layout.fillHeight: true
+            Layout.minimumHeight: 0
+            ColumnLayout {
+                id: content
+                width: scroll.availableWidth
+                spacing: 12
+                ShellLabel {
+                    text: "Your space"
+                    font.family: Theme.typography.serif
+                    font.pixelSize: 25
                     Layout.fillWidth: true
-                    Layout.preferredWidth: 1
-                    Layout.minimumWidth: 0
-                    implicitHeight: 76
-                    Accessible.name: modelData.title + ", Planned"
-                    contentItem: ColumnLayout {
-                        spacing: 6
-                        RowLayout {
-                            Layout.fillWidth: true
-                            ShellIcon {
-                                name: modelData.icon
-                                color: Theme.colors.accent
-                                Layout.preferredWidth: 18
-                                Layout.preferredHeight: 18
+                }
+                ShellLabel {
+                    text: Qt.formatDateTime(clock.date, "dddd, MMMM d")
+                    color: Theme.colors.muted
+                    font.pixelSize: 11
+                    Layout.fillWidth: true
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+                    Repeater {
+                        model: [
+                            {
+                                name: "quickNetwork",
+                                title: "Network",
+                                icon: "wifi",
+                                description: "Wi-Fi controls"
+                            },
+                            {
+                                name: "quickBluetooth",
+                                title: "Bluetooth",
+                                icon: "bluetooth",
+                                description: "Device controls"
                             }
-                            Item {
-                                Layout.fillWidth: true
+                        ]
+                        ShellButton {
+                            required property var modelData
+                            objectName: modelData.name
+                            text: modelData.title
+                            enabled: false
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: 1
+                            Layout.minimumWidth: 0
+                            implicitHeight: 76
+                            Accessible.name: modelData.title + ", Planned"
+                            contentItem: ColumnLayout {
+                                spacing: 6
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    ShellIcon {
+                                        name: modelData.icon
+                                        color: Theme.colors.accent
+                                        Layout.preferredWidth: 18
+                                        Layout.preferredHeight: 18
+                                    }
+                                    Item {
+                                        Layout.fillWidth: true
+                                    }
+                                    ShellLabel {
+                                        text: "PLANNED"
+                                        font.family: Theme.typography.mono
+                                        font.pixelSize: 7
+                                        color: Theme.colors.subtle
+                                    }
+                                }
+                                ShellLabel {
+                                    text: modelData.title
+                                    font.pixelSize: 11
+                                    color: Theme.colors.muted
+                                }
+                                ShellLabel {
+                                    text: modelData.description
+                                    font.pixelSize: 9
+                                    color: Theme.colors.subtle
+                                }
+                            }
+                            background: Rectangle {
+                                color: Theme.colors.elevated
+                                radius: Theme.metrics.controlRadius
+                            }
+                        }
+                    }
+                }
+                ShellLabel {
+                    objectName: "audioStatus"
+                    text: root.services.audioStatus
+                    visible: text.length > 0
+                    color: Theme.colors.warning
+                    font.pixelSize: 12
+                    Layout.fillWidth: true
+                }
+                ShellLabel {
+                    objectName: "audioOutputName"
+                    text: root.services.outputName
+                    visible: root.services.audioAvailable && text.length > 0
+                    Layout.fillWidth: true
+                    color: Theme.colors.muted
+                    font.pixelSize: 12
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    ShellLabel {
+                        text: "Output volume"
+                        Layout.fillWidth: true
+                    }
+                    ShellLabel {
+                        objectName: "audioPercentage"
+                        text: root.services.audioAvailable ? root.services.volumePercent + "%" : "—"
+                        font.weight: Font.DemiBold
+                    }
+                }
+                Slider {
+                    id: volumeSlider
+                    objectName: "audioVolume"
+                    Layout.fillWidth: true
+                    from: 0
+                    to: 1
+                    stepSize: 0.01
+                    implicitHeight: 28
+                    value: root.services.volume
+                    enabled: root.services.audioAvailable
+                    focusPolicy: Qt.StrongFocus
+                    Accessible.name: "Output volume"
+                    // Only user moves write to PipeWire. External changes keep the binding.
+                    onMoved: root.services.setVolume(value)
+                    background: Rectangle {
+                        x: volumeSlider.leftPadding
+                        y: volumeSlider.topPadding + volumeSlider.availableHeight / 2 - height / 2
+                        height: 6
+                        width: volumeSlider.availableWidth
+                        radius: 3
+                        color: Theme.colors.overlay
+                        Rectangle {
+                            width: volumeSlider.visualPosition * parent.width
+                            height: parent.height
+                            radius: 3
+                            color: Theme.colors.accent
+                        }
+                    }
+                    handle: Rectangle {
+                        x: volumeSlider.leftPadding + volumeSlider.visualPosition * (volumeSlider.availableWidth - width)
+                        y: volumeSlider.topPadding + volumeSlider.availableHeight / 2 - height / 2
+                        width: 18
+                        height: 18
+                        radius: 9
+                        color: Theme.colors.accent
+                        border.width: volumeSlider.visualFocus ? 2 : 0
+                        border.color: Theme.colors.text
+                    }
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    ShellButton {
+                        objectName: "audioDecrease"
+                        text: "−5%"
+                        compact: true
+                        enabled: root.services.audioAvailable
+                        Accessible.name: "Decrease volume by five percent"
+                        onClicked: root.services.setVolume(root.services.volume - 0.05)
+                    }
+                    ShellButton {
+                        objectName: "audioMute"
+                        text: root.services.muted ? "Unmute" : "Mute"
+                        compact: true
+                        selected: root.services.muted
+                        Accessible.checkable: true
+                        Accessible.checked: root.services.muted
+                        enabled: root.services.audioAvailable
+                        Layout.fillWidth: true
+                        onClicked: root.services.toggleMute()
+                    }
+                    ShellButton {
+                        objectName: "audioIncrease"
+                        text: "+5%"
+                        compact: true
+                        enabled: root.services.audioAvailable
+                        Accessible.name: "Increase volume by five percent"
+                        onClicked: root.services.setVolume(root.services.volume + 0.05)
+                    }
+                }
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: 1
+                    color: Theme.colors.border
+                }
+                ShellButton {
+                    id: settingsButton
+                    objectName: "quickSettings"
+                    text: "Settings"
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                    implicitHeight: 56
+                    quiet: true
+                    borderless: true
+                    leftPadding: 0
+                    rightPadding: 0
+                    Accessible.name: "Open Settings"
+                    onClicked: root.settingsRequested()
+                    contentItem: RowLayout {
+                        spacing: 12
+                        ShellIcon {
+                            name: "settings"
+                            color: Theme.colors.muted
+                            Layout.preferredWidth: 18
+                            Layout.preferredHeight: 18
+                        }
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.minimumWidth: 0
+                            spacing: 4
+                            ShellLabel {
+                                text: "Settings"
+                                font.pixelSize: 13
                             }
                             ShellLabel {
-                                text: "PLANNED"
-                                font.family: Theme.typography.mono
-                                font.pixelSize: 7
-                                color: Theme.colors.subtle
+                                text: "Appearance and desktop preferences"
+                                font.pixelSize: 10
+                                color: Theme.colors.muted
+                                Layout.fillWidth: true
+                                Layout.minimumWidth: 0
+                                elide: Text.ElideRight
+                                wrapMode: Text.NoWrap
                             }
                         }
-                        ShellLabel {
-                            text: modelData.title
-                            font.pixelSize: 11
+                        ShellIcon {
+                            name: "arrow"
                             color: Theme.colors.muted
-                        }
-                        ShellLabel {
-                            text: modelData.description
-                            font.pixelSize: 9
-                            color: Theme.colors.subtle
+                            Layout.preferredWidth: 16
+                            Layout.preferredHeight: 16
                         }
                     }
-                    background: Rectangle {
-                        color: Theme.colors.elevated
-                        radius: Theme.metrics.controlRadius
-                    }
-                }
-            }
-        }
-        ShellLabel {
-            objectName: "audioStatus"
-            text: root.services.audioStatus
-            visible: text.length > 0
-            color: Theme.colors.warning
-            font.pixelSize: 12
-            Layout.fillWidth: true
-        }
-        ShellLabel {
-            objectName: "audioOutputName"
-            text: root.services.outputName
-            Layout.fillWidth: true
-            color: Theme.colors.muted
-            font.pixelSize: 12
-        }
-        RowLayout {
-            Layout.fillWidth: true
-            ShellLabel {
-                text: "Output volume"
-                Layout.fillWidth: true
-            }
-            ShellLabel {
-                objectName: "audioPercentage"
-                text: root.services.audioAvailable ? root.services.volumePercent + "%" : "—"
-                font.weight: Font.DemiBold
-            }
-        }
-        Slider {
-            id: volumeSlider
-            objectName: "audioVolume"
-            Layout.fillWidth: true
-            from: 0
-            to: 1
-            stepSize: 0.01
-            value: root.services.volume
-            enabled: root.services.audioAvailable
-            focusPolicy: Qt.StrongFocus
-            Accessible.name: "Output volume"
-            // Only user moves write to PipeWire. External changes keep the binding.
-            onMoved: root.services.setVolume(value)
-            background: Rectangle {
-                x: volumeSlider.leftPadding
-                y: volumeSlider.topPadding + volumeSlider.availableHeight / 2 - height / 2
-                implicitHeight: 6
-                width: volumeSlider.availableWidth
-                radius: 3
-                color: Theme.colors.overlay
-                Rectangle {
-                    width: volumeSlider.visualPosition * parent.width
-                    height: parent.height
-                    radius: 3
-                    color: Theme.colors.accent
-                }
-            }
-            handle: Rectangle {
-                x: volumeSlider.leftPadding + volumeSlider.visualPosition * (volumeSlider.availableWidth - width)
-                y: volumeSlider.topPadding + volumeSlider.availableHeight / 2 - height / 2
-                implicitWidth: 18
-                implicitHeight: 18
-                radius: 9
-                color: Theme.colors.accent
-                border.width: volumeSlider.visualFocus ? 2 : 0
-                border.color: Theme.colors.text
-            }
-        }
-        RowLayout {
-            Layout.fillWidth: true
-            ShellButton {
-                objectName: "audioDecrease"
-                text: "−5%"
-                compact: true
-                enabled: root.services.audioAvailable
-                Accessible.name: "Decrease volume by five percent"
-                onClicked: root.services.setVolume(root.services.volume - 0.05)
-            }
-            ShellButton {
-                objectName: "audioMute"
-                text: root.services.muted ? "Unmute" : "Mute"
-                compact: true
-                selected: root.services.muted
-                enabled: root.services.audioAvailable
-                Layout.fillWidth: true
-                onClicked: root.services.toggleMute()
-            }
-            ShellButton {
-                objectName: "audioIncrease"
-                text: "+5%"
-                compact: true
-                enabled: root.services.audioAvailable
-                Accessible.name: "Increase volume by five percent"
-                onClicked: root.services.setVolume(root.services.volume + 0.05)
-            }
-        }
-        Rectangle {
-            Layout.fillWidth: true
-            implicitHeight: 1
-            color: Theme.colors.border
-        }
-        ShellButton {
-            id: settingsButton
-            objectName: "quickSettings"
-            text: "Settings"
-            Layout.fillWidth: true
-            Layout.minimumWidth: 0
-            implicitHeight: 56
-            quiet: true
-            borderless: true
-            leftPadding: 0
-            rightPadding: 0
-            Accessible.name: "Open Settings"
-            onClicked: root.settingsRequested()
-            contentItem: RowLayout {
-                spacing: 12
-                ShellIcon {
-                    name: "settings"
-                    color: Theme.colors.muted
-                    Layout.preferredWidth: 18
-                    Layout.preferredHeight: 18
-                }
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Layout.minimumWidth: 0
-                    spacing: 4
-                    ShellLabel {
-                        text: "Settings"
-                        font.pixelSize: 13
-                    }
-                    ShellLabel {
-                        text: "Appearance and desktop preferences"
-                        font.pixelSize: 10
-                        color: Theme.colors.muted
-                        Layout.fillWidth: true
-                        Layout.minimumWidth: 0
-                        elide: Text.ElideRight
-                        wrapMode: Text.NoWrap
-                    }
-                }
-                ShellIcon {
-                    name: "arrow"
-                    color: Theme.colors.muted
-                    Layout.preferredWidth: 16
-                    Layout.preferredHeight: 16
                 }
             }
         }

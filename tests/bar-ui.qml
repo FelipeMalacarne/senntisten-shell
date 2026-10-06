@@ -565,6 +565,34 @@ ShellRoot {
                     return selected.x > viewport.width && selected.selected && p.x >= -0.1 && p.x + selected.width <= viewport.width + 0.1;
                 }, 1000, "The live active workspace should not be clipped offscreen");
             }
+            function test_resize_keeps_the_active_workspace_and_focused_tray_item_visible() {
+                const bar = barLoader.item;
+                compositor.workspaces.values = Array.from({
+                    length: 12
+                }, (_, i) => workspace(i + 1, "DP-1", i === 11));
+                tray.items.values = Array.from({
+                    length: 6
+                }, (_, i) => Object.assign(trayItem(false), {
+                        id: "resize-" + i
+                    }));
+                tryCompare(bar, "workspaceCount", 12);
+                const viewport = findChild(bar, "barWorkspaceViewport");
+                const active = findChild(bar, "workspace-12");
+                const trayViewport = findChild(bar, "barTrayViewport");
+                const lastTray = findChild(bar, "tray-resize-5");
+                lastTray.forceActiveFocus();
+                for (const width of [480, 1100, 320, 900]) {
+                    barLoader.width = width;
+                    tryVerify(() => {
+                        const p = active.mapToItem(viewport, 0, 0);
+                        return p.x >= -0.1 && p.x + active.width <= viewport.width + 0.1;
+                    }, 1000, "Active workspace must stay visible after resizing to " + width);
+                    tryVerify(() => {
+                        const p = lastTray.mapToItem(trayViewport, 0, 0);
+                        return p.x >= -0.1 && p.x + lastTray.width <= trayViewport.width + 0.1;
+                    }, 1000, "Focused tray item must stay visible after resizing to " + width);
+                }
+            }
             function test_nonfocused_monitors_keep_the_right_controls_right_aligned() {
                 const bar = barLoader.item;
                 compositor.activeToplevel = {
@@ -592,6 +620,42 @@ ShellRoot {
                 compare(appearanceSpy.count, 1);
                 verify(launcher.Accessible.name.length > 0);
                 verify(appearance.Accessible.name.length > 0);
+            }
+            function test_orbit_tray_has_quiet_icons_and_a_separate_status_group() {
+                const bar = barLoader.item;
+                tray.items.values = [trayItem(false)];
+                tryCompare(bar, "trayCount", 1);
+                const item = findChild(bar, "tray-test-tray");
+                verify(item !== null);
+                item.focus = false;
+                compare(item.background.border.width, 0, "Tray must not inherit boxed button chrome");
+                compare(item.width, 28);
+                compare(item.height, 28);
+                const icon = findChild(item, "trayIcon");
+                verify(icon !== null);
+                compare(icon.width, 16);
+                compare(icon.height, 16);
+                const divider = findChild(bar, "barTrayDivider");
+                verify(divider !== null && divider.visible);
+                compare(findChild(bar, "barAudioIcon").width, 16);
+                compare(findChild(bar, "barSettingsIcon").width, 16);
+                const paths = ["M3 4h18v16H3Z M7 9l3 3-3 3m6 0h4", "M7 7l10 10-5 5V2l5 5L7 17", "M3 3h18v13H3Z M12 16v5m-5 0h10"];
+                const output = Quickshell.env("SENNTISTEN_CAPTURE_DIR");
+                for (const theme of ["catppuccin-mocha", "gruvbox"]) {
+                    verify(Theme.selectTheme(theme));
+                    tryCompare(Theme, "saveStatus", "saved");
+                    tray.items.values = paths.map((path, index) => Object.assign(trayItem(false), {
+                            id: "orbit-fixture-" + index,
+                            icon: "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="' + path + '" fill="none" stroke="' + Theme.colors.subtle + '" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>')
+                        }));
+                    tryVerify(() => {
+                        const first = findChild(bar, "tray-orbit-fixture-0");
+                        return first !== null && findChild(first, "trayIcon").status === Image.Ready;
+                    });
+                    wait(180);
+                    if (output)
+                        grabImage(bar).save(output + "/orbit-bar-tray-" + theme + ".png");
+                }
             }
             function test_orbit_clock_stays_centered_without_control_collisions() {
                 const bar = barLoader.item;

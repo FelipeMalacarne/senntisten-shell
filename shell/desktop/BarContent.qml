@@ -82,6 +82,7 @@ Item {
             spacing: root.width < 600 ? 4 : 14
 
             ShellButton {
+                id: launcherButton
                 objectName: "barLauncher"
                 text: "Applications"
                 Accessible.name: "Open application launcher"
@@ -103,8 +104,13 @@ Item {
                     radius: Theme.metrics.controlRadius
                     color: parent.down || parent.hovered || parent.activeFocus ? Theme.colors.overlay : Qt.rgba(0, 0, 0, 0)
                 }
-                ToolTip.visible: hovered
-                ToolTip.text: "Applications"
+                BarTooltip {
+                    objectName: "barLauncherTooltip"
+                    targetItem: launcherButton
+                    text: "Applications"
+                    hovered: launcherButton.hovered
+                    popAbove: root.popAbove
+                }
                 onClicked: root.launcherRequested()
             }
             ShellLabel {
@@ -174,8 +180,12 @@ Item {
                                 radius: Theme.metrics.controlRadius
                                 color: workspaceButton.down || workspaceButton.hovered || workspaceButton.activeFocus ? Theme.colors.overlay : Qt.rgba(0, 0, 0, 0)
                             }
-                            ToolTip.visible: hovered
-                            ToolTip.text: Accessible.name
+                            BarTooltip {
+                                targetItem: workspaceButton
+                                text: workspaceButton.Accessible.name
+                                hovered: workspaceButton.hovered
+                                popAbove: root.popAbove
+                            }
                             onClicked: modelData.activate()
                             onActiveFocusChanged: if (activeFocus)
                                 Qt.callLater(workspaceViewport.reveal, this)
@@ -225,7 +235,7 @@ Item {
             anchors.right: parent.right
             anchors.rightMargin: root.edgePadding
             anchors.verticalCenter: parent.verticalCenter
-            spacing: root.width < 600 ? 4 : 14
+            spacing: root.width < 600 ? 4 : 12
 
             BarScrollStrip {
                 id: trayViewport
@@ -234,12 +244,12 @@ Item {
                 Layout.maximumWidth: Layout.preferredWidth
                 Layout.minimumWidth: root.trayCount > 0 ? 32 : 0
                 visible: root.trayCount > 0
-                Layout.preferredHeight: 32
+                Layout.preferredHeight: 28
                 contentWidth: trayRow.implicitWidth
                 contentHeight: height
                 Row {
                     id: trayRow
-                    spacing: 4
+                    spacing: 0
                     Repeater {
                         model: root.services.trayItems
                         BarTrayButton {
@@ -252,6 +262,14 @@ Item {
                         }
                     }
                 }
+            }
+            Rectangle {
+                objectName: "barTrayDivider"
+                visible: root.trayCount > 0 && root.width >= 600
+                Layout.preferredWidth: 1
+                Layout.preferredHeight: 18
+                color: Theme.colors.border
+                opacity: 0.5
             }
             ShellLabel {
                 objectName: "barTrayStatus"
@@ -267,7 +285,7 @@ Item {
                 id: audioButton
                 objectName: "barAudio"
                 compact: true
-                implicitWidth: root.width < 420 ? 32 : 76
+                implicitWidth: root.width < 420 ? 32 : 64
                 implicitHeight: 32
                 padding: 6
                 leftPadding: padding
@@ -285,10 +303,10 @@ Item {
                     spacing: 6
                     ShellIcon {
                         objectName: "barAudioIcon"
-                        Layout.preferredWidth: 20
-                        Layout.preferredHeight: 20
+                        Layout.preferredWidth: 16
+                        Layout.preferredHeight: 16
                         name: root.services.muted ? "speaker-muted" : "speaker"
-                        color: root.services.audioAvailable ? Theme.colors.text : Theme.colors.warning
+                        color: root.services.audioAvailable ? Theme.colors.muted : Theme.colors.warning
                     }
                     ShellLabel {
                         visible: root.width >= 420
@@ -305,17 +323,23 @@ Item {
                     radius: Theme.metrics.controlRadius
                     color: audioButton.selected || audioButton.down || audioButton.hovered || audioButton.activeFocus ? Theme.colors.overlay : Qt.rgba(0, 0, 0, 0)
                 }
-                ToolTip.visible: hovered
-                ToolTip.text: Accessible.name
+                BarTooltip {
+                    objectName: "barAudioTooltip"
+                    targetItem: audioButton
+                    text: audioButton.Accessible.name
+                    hovered: audioButton.hovered
+                    popAbove: root.popAbove
+                }
                 onClicked: root.audioRequested()
             }
             ShellButton {
+                id: settingsButton
                 objectName: "barAppearance"
                 text: "Settings"
                 Accessible.name: "Open Settings"
                 implicitWidth: 32
                 implicitHeight: 32
-                padding: 6
+                padding: 8
                 leftPadding: padding
                 rightPadding: padding
                 topPadding: padding
@@ -326,13 +350,19 @@ Item {
                 contentItem: ShellIcon {
                     objectName: "barSettingsIcon"
                     name: "settings"
+                    color: Theme.colors.muted
                 }
                 background: Rectangle {
                     radius: Theme.metrics.controlRadius
                     color: parent.down || parent.hovered || parent.activeFocus ? Theme.colors.overlay : Qt.rgba(0, 0, 0, 0)
                 }
-                ToolTip.visible: hovered
-                ToolTip.text: "Settings"
+                BarTooltip {
+                    objectName: "barSettingsTooltip"
+                    targetItem: settingsButton
+                    text: "Settings"
+                    hovered: settingsButton.hovered
+                    popAbove: root.popAbove
+                }
                 onClicked: root.appearanceRequested()
             }
         }

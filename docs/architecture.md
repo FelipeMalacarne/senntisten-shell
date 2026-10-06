@@ -73,6 +73,14 @@ in the existing catalog. The bar is continuous at the screen edge, with native
 workspace objects behind soft dot/pill indicators. Launcher rows retain native
 desktop entries, with consistent search/result gutters and fixed row heights.
 
+The launcher uses a 470-pixel maximum panel width and Quick Controls a 300-pixel
+preferred width, matching Orbit's compact composition. Both shrink to available
+space. `ShellIconButton` supplies the shared borderless close action and visible
+keyboard focus; `ShellScrollView` reveals keyboard-reached controls without
+silently scrolling pointer targets. Quick Controls keeps its close action fixed
+while the body scrolls on short screens. The output slider has an explicit thin
+track and round thumb instead of stretching its track to the control height.
+
 Quick Controls and Settings are distinct production surfaces. Quick Controls
 provides live default-output audio controls. Network and Bluetooth are disabled
 Planned tiles, with no fabricated status. Brightness, media, and Do Not Disturb
@@ -87,6 +95,9 @@ Save errors and unsupported-state warnings stay visible outside scrolling conten
 Closing Settings restores the invoking Quick Controls entry when applicable,
 without terminating the desktop. Launcher and Settings use separate monitor
 targets so opening one does not move an already open surface to another monitor.
+Settings uses the same local vector icon vocabulary, Orbit palette thumbnails,
+aligned planned-action columns, and a horizontally scrollable narrow navigation
+strip. Its opaque feedback footer remains separate from scrolling content.
 
 The desktop entry-point icon represents the distribution, not Senntisten's S
 mark. `distroId` in the Nix package defaults explicitly to `nixos` and can be
@@ -191,6 +202,19 @@ when content overflows.
 Native Wayland validation is separate and read back by PID and layer namespace.
 Preview success does not prove multi-monitor hotplug, Home Manager startup, or
 full-session replacement.
+
+After explicit approval for the target display, `tests/wayland_smoke.py` exercises
+the actual bar/launcher/popup wrappers with isolated appearance/provider state.
+Run with `SENNTISTEN_WAYLAND_TEST_APPROVED=1` inside `nix develop`. Its compositor
+pointer test requires Hyprland, one scale-1 monitor at origin 0,0, and the standard virtual
+pointer protocol. It briefly creates its own zero-reservation bar, tests launcher,
+Settings, and Quick Controls both before and after hover hints, then removes only
+its own surfaces and restores the pointer. It never runs in the default checks.
+
+Injected Qt mouse events are not proof of compositor hit testing. Qt Controls
+tooltips on a layer bar can create an in-window overlay that swallows actual
+pointer clicks even when injected Qt events pass. Bar hover hints therefore use
+passive Quickshell popups with an empty input mask and no focus grab.
 
 ## Subsequent increments
 

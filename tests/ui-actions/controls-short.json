@@ -1,0 +1,15 @@
+[
+  {"op": "key", "key": "Tab"},
+  {"op": "expect", "target": "audioDecrease", "property": "activeFocus", "value": true},
+  {"op": "key", "key": "Tab"},
+  {"op": "expect", "target": "audioMute", "property": "activeFocus", "value": true},
+  {"op": "click", "target": "audioMute"},
+  {"op": "expect", "target": "audioMute", "property": "text", "value": "Unmute"},
+  {"op": "key", "key": "Tab"},
+  {"op": "key", "key": "Tab"},
+  {"op": "expect", "target": "quickSettings", "property": "activeFocus", "value": true},
+  {"op": "click", "target": "quickSettings"},
+  {"op": "key", "key": "Tab"},
+  {"op": "expect", "target": "audioClose", "property": "activeFocus", "value": true},
+  {"op": "key", "key": "Return"}
+]
