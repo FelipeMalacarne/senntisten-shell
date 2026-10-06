@@ -1,0 +1,9 @@
+[
+  {"op": "hover", "target": "barLauncher"},
+  {"op": "click", "target": "barLauncher"},
+  {"op": "click", "target": "workspace-2"},
+  {"op": "click", "target": "barAudio"},
+  {"op": "click", "target": "barAppearance"},
+  {"op": "resize", "width": 360, "height": 44},
+  {"op": "wheel", "target": "barWorkspaceViewport", "dy": -120}
+]

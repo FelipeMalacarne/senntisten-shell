@@ -167,6 +167,20 @@ normal launches.
 
 ## Checks
 
+For agent-driven visual and interaction work, see the
+[UI harness guide](docs/ui-harness.md). These commands need no live display:
+
+```sh
+make ui-check
+make ui-inspect UI_ARGS='--scene launcher --actions tests/ui-actions/launcher.json'
+make ui-inspect UI_ARGS='--scene settings --width 320 --height 360 --theme gruvbox'
+```
+
+Each run prints a fresh local report containing actual QML screenshots, logs,
+and machine-readable evidence. Inspection replays also dump focus, accessibility,
+control geometry, clipping, and state after every action. Reports do not replace
+looking at the PNGs or establish native compositor/GPU behavior.
+
 The canonical project check builds the package and runs the declared checks in Nix:
 
 ```sh

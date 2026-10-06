@@ -34,6 +34,28 @@ shortcuts, or change session startup without explicit activation approval.
   RED/GREEN cycles. Verify real QML execution, not only source-file patterns.
 - Test against temporary state/config/runtime paths, never the user's live data.
 
+## UI Development And Evidence
+
+- Start with [the UI harness guide](docs/ui-harness.md). `make ui-inspect` renders
+  real QML in an isolated offscreen scene; `make ui-check` collects regression
+  screenshots and interaction results. Both print a fresh artifact report path.
+- For UI changes, add a failing behavioral case, run RED/GREEN, then inspect actual
+  PNGs with an image tool. Check both palettes, wide/narrow geometry, keyboard focus,
+  pointer behavior, and relevant empty/unavailable/save-error states.
+- Use `tests/ui-actions/` replays or a custom JSON action file. Inspect checkpoint
+  JSON for control names, accessibility, focus, clipping, and state; use `expect`
+  actions to assert outcomes. A screenshot alone does not prove an interaction.
+- `focus` explicitly forces focus for component diagnosis. It is not proof of Tab
+  reachability. Pointer actions reject disabled/hidden/clipped targets instead of
+  calling their handlers. Promote regressions into the normal QtTest suites.
+- Reports and browser design studies are not the shell. Browser automation can
+  inspect the report, but native interaction evidence comes from QtTest QML.
+- Report exact commands, artifact paths, viewed images, and remaining limits.
+  Offscreen/software results do not prove compositor focus, layer reservations,
+  multi-monitor behavior, tray platform menus, or GPU rendering. Live preview or
+  Wayland tests require explicit approval or an explicitly supplied disposable
+  compositor; never target the user's desktop implicitly.
+
 ## MVP acceptance
 
 1. Desktop mode provides a real per-monitor bar with live workspaces, clock, tray,

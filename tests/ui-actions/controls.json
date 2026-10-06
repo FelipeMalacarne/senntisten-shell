@@ -1,0 +1,8 @@
+[
+  {"op": "drag", "target": "audioVolume", "fromX": 0.3, "toX": 0.75},
+  {"op": "click", "target": "audioMute"},
+  {"op": "expect", "target": "audioMute", "property": "text", "value": "Unmute"},
+  {"op": "click", "target": "audioMute"},
+  {"op": "key", "key": "Tab"},
+  {"op": "click", "target": "quickSettings"}
+]

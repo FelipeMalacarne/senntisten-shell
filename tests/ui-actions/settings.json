@@ -1,0 +1,9 @@
+[
+  {"op": "hover", "target": "theme-gruvbox"},
+  {"op": "click", "target": "theme-gruvbox"},
+  {"op": "expect", "target": "theme-gruvbox", "property": "selected", "value": true},
+  {"op": "resize", "width": 320, "height": 360},
+  {"op": "focus", "target": "reducedMotionSwitch"},
+  {"op": "key", "key": "Space"},
+  {"op": "expect", "target": "reducedMotionSwitch", "property": "checked", "value": true}
+]

@@ -5,7 +5,7 @@ NIX_FLAGS ?= --no-write-lock-file
 DEV := $(NIX) develop $(NIX_FLAGS) --command
 
 .PHONY: help run-preview run-desktop playground develop fmt fmt-check lint \
-	test-unit test-integration test test-package-smoke package-smoke build check ci clean
+	test-unit test-integration test ui-check ui-inspect test-package-smoke package-smoke build check ci clean
 
 help:
 	@printf '%s\n' \
@@ -20,6 +20,8 @@ help:
 		'  make test-unit          Run Node unit tests' \
 		'  make test-integration   Run real offscreen Quickshell integration tests' \
 		'  make test               Run unit and integration tests' \
+		'  make ui-check           Run UI regressions and collect fresh screenshots/logs' \
+		'  make ui-inspect         Inspect real QML; UI_ARGS="--scene settings --actions ..."' \
 		'  make test-package-smoke Build the package and test its launcher/duplicate guard' \
 		'  make build              Build the packaged shell' \
 		'  make check              Run the complete Nix flake checks' \
@@ -59,6 +61,12 @@ test-integration:
 	$(DEV) python3 -m unittest discover -s tests -p '*integration.py' -v
 
 test: test-unit test-integration
+
+ui-check:
+	$(DEV) python3 tests/ui_check.py $(UI_ARGS)
+
+ui-inspect:
+	$(DEV) python3 tests/ui_harness.py $(UI_ARGS)
 
 test-package-smoke:
 	@package=$$($(NIX) build $(NIX_FLAGS) --no-link --print-out-paths); \

@@ -1,0 +1,13 @@
+[
+  {"op": "type", "target": "launcherSearch", "text": "journal"},
+  {"op": "expect", "target": "launcherCount", "property": "text", "value": "1 match"},
+  {"op": "key", "key": "Tab"},
+  {"op": "key", "key": "Return"},
+  {"op": "reset"},
+  {"op": "resize", "width": 360, "height": 360},
+  {"op": "key", "key": "Up"},
+  {"op": "type", "target": "launcherSearch", "text": "no-such-app"},
+  {"op": "expect", "target": "launcherEmpty", "property": "visible", "value": true},
+  {"op": "type", "target": "launcherSearch", "text": "Alpha"},
+  {"op": "click", "target": "Alpha Browser, Web Browser"}
+]
