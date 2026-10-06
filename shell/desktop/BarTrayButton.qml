@@ -12,6 +12,7 @@ ShellButton {
     objectName: "tray-" + trayItem.id
     text: trayItem.title || trayItem.id
     compact: true
+    quiet: true
     width: 32
     leftPadding: 6
     rightPadding: 6

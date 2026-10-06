@@ -12,7 +12,7 @@ FocusScope {
     readonly property var results: ApplicationSearch.search(entries, searchField.text, 8)
     readonly property int resultCount: results.length
     property int currentIndex: resultCount > 0 ? 0 : -1
-    signal dismissed()
+    signal dismissed
 
     onResultsChanged: currentIndex = results.length > 0 ? 0 : -1
 
@@ -67,7 +67,17 @@ FocusScope {
         anchors.centerIn: parent
         width: Math.max(0, Math.min(560, parent.width - 32))
         height: Math.max(0, Math.min(parent.height - 32, body.implicitHeight + padding * 2))
-        padding: 18
+        padding: Theme.metrics.panelPadding
+        background: Rectangle {
+            radius: Theme.metrics.panelRadius
+            color: Theme.colors.surface
+            border.color: Theme.colors.border
+            Behavior on color {
+                ColorAnimation {
+                    duration: Theme.animationDuration
+                }
+            }
+        }
 
         ColumnLayout {
             id: body
@@ -75,18 +85,44 @@ FocusScope {
             spacing: 12
             RowLayout {
                 Layout.fillWidth: true
+                spacing: 10
+                DistroMark {
+                    objectName: "launcherBrand"
+                    Layout.preferredWidth: 20
+                    Layout.preferredHeight: 20
+                    Accessible.ignored: true
+                }
                 ShellLabel {
                     Layout.fillWidth: true
                     text: "Applications"
-                    font.pixelSize: 18
-                    font.weight: Font.DemiBold
+                    color: Theme.colors.muted
+                    font.family: Theme.typography.sans
+                    font.pixelSize: 11
+                    font.letterSpacing: 0.8
                 }
                 ShellButton {
                     id: closeButton
                     objectName: "launcherClose"
-                    text: "Esc"
+                    text: "Close"
                     Accessible.name: "Close application launcher"
                     compact: true
+                    implicitWidth: 32
+                    implicitHeight: 32
+                    padding: 6
+                    leftPadding: padding
+                    rightPadding: padding
+                    topPadding: padding
+                    bottomPadding: padding
+                    contentItem: ShellIcon {
+                        objectName: "launcherCloseIcon"
+                        name: "close"
+                    }
+                    background: Rectangle {
+                        radius: Theme.metrics.controlRadius
+                        color: closeButton.down || closeButton.hovered || closeButton.activeFocus ? Theme.colors.overlay : Qt.rgba(0, 0, 0, 0)
+                    }
+                    ToolTip.visible: hovered
+                    ToolTip.text: "Close launcher"
                     onClicked: root.dismissed()
                     KeyNavigation.tab: searchField
                     KeyNavigation.backtab: list.currentItem || searchField
@@ -98,19 +134,20 @@ FocusScope {
                 id: searchField
                 objectName: "launcherSearch"
                 Layout.fillWidth: true
-                implicitHeight: 44
-                placeholderText: "Search applications…"
+                implicitHeight: Theme.metrics.resultHeight
+                Layout.preferredHeight: implicitHeight
+                placeholderText: "Find an application"
                 Accessible.name: "Search applications"
-                font.family: "Noto Sans"
-                font.pixelSize: 14
-                leftPadding: 12
-                rightPadding: 12
+                font.family: Theme.typography.sans
+                font.pixelSize: 19
+                leftPadding: 56
+                rightPadding: 40
                 color: Theme.colors.text
                 placeholderTextColor: Theme.colors.muted
                 selectionColor: Theme.colors.accent
                 selectedTextColor: Theme.colors.accentText
                 background: Rectangle {
-                    radius: 8
+                    radius: Theme.metrics.controlRadius
                     color: Theme.colors.background
                     border.color: searchField.activeFocus ? Theme.colors.accent : Theme.colors.border
                     border.width: searchField.activeFocus ? 2 : 1
@@ -118,6 +155,45 @@ FocusScope {
                 Keys.onPressed: event => root.handleKey(event)
                 KeyNavigation.tab: list.currentItem || closeButton
                 KeyNavigation.backtab: closeButton
+                ShellIcon {
+                    objectName: "launcherSearchIcon"
+                    anchors.left: parent.left
+                    anchors.leftMargin: 17
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 22
+                    height: 22
+                    name: "search"
+                    color: searchField.activeFocus ? Theme.colors.accent : Theme.colors.muted
+                    enabled: false
+                }
+                ShellIcon {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 12
+                    anchors.verticalCenter: parent.verticalCenter
+                    name: "arrow"
+                    color: Theme.colors.accent
+                    enabled: false
+                }
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                ShellLabel {
+                    Layout.fillWidth: true
+                    text: "Installed applications"
+                    color: Theme.colors.subtle
+                    font.family: Theme.typography.sans
+                    font.pixelSize: 10
+                    elide: Text.ElideRight
+                    wrapMode: Text.NoWrap
+                }
+                ShellLabel {
+                    objectName: "launcherCount"
+                    text: root.resultCount + (root.resultCount === 1 ? " match" : " matches")
+                    color: Theme.colors.subtle
+                    font.family: Theme.typography.mono
+                    font.pixelSize: 10
+                    wrapMode: Text.NoWrap
+                }
             }
             ListView {
                 id: list
@@ -125,10 +201,10 @@ FocusScope {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Layout.minimumHeight: 0
-                implicitHeight: root.resultCount * 58
+                implicitHeight: root.resultCount * Theme.metrics.resultHeight + Math.max(0, root.resultCount - 1) * spacing
                 visible: root.resultCount > 0
                 clip: true
-                spacing: 6
+                spacing: 4
                 model: root.results
                 currentIndex: root.currentIndex
                 highlightMoveDuration: Theme.animationDuration
@@ -137,14 +213,14 @@ FocusScope {
                 highlightResizeVelocity: -1
                 ScrollBar.vertical: ScrollBar {
                     objectName: "launcherScrollbar"
-                    policy: ScrollBar.AsNeeded
+                    policy: list.contentHeight > list.height + 0.5 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
                     contentItem: Rectangle {
                         implicitWidth: 4
                         radius: 2
                         color: Theme.colors.subtle
                     }
                     background: Rectangle {
-                        color: "transparent"
+                        color: Qt.rgba(0, 0, 0, 0)
                     }
                 }
                 delegate: ShellButton {
@@ -152,9 +228,31 @@ FocusScope {
                     required property var modelData
                     required property int index
                     width: list.width
-                    height: 52
+                    height: Theme.metrics.resultHeight
+                    padding: 12
+                    leftPadding: padding
+                    rightPadding: padding
+                    topPadding: 10
+                    bottomPadding: 10
                     text: modelData.name
                     selected: index === root.currentIndex
+                    quiet: true
+                    quietSelection: true
+                    selectedBackground: Theme.colors.elevated
+                    selectedForeground: Theme.colors.text
+                    Accessible.name: modelData.name + (modelData.genericName ? ", " + modelData.genericName : "")
+                    Accessible.selected: selected
+                    background: Rectangle {
+                        radius: Theme.metrics.controlRadius
+                        color: row.down || row.activeFocus ? Theme.colors.overlay : row.selected || row.hovered ? Theme.colors.elevated : Qt.rgba(0, 0, 0, 0)
+                        border.color: row.visualFocus ? Theme.colors.accent : row.selected ? Theme.colors.border : Qt.rgba(0, 0, 0, 0)
+                        border.width: row.visualFocus ? 2 : 1
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: Theme.animationDuration
+                            }
+                        }
+                    }
                     KeyNavigation.tab: closeButton
                     KeyNavigation.backtab: searchField
                     Keys.onPressed: event => root.handleKey(event)
@@ -179,6 +277,7 @@ FocusScope {
                                 objectName: "launcherResultName"
                                 Layout.fillWidth: true
                                 text: row.modelData.name
+                                font.family: Theme.typography.sans
                                 elide: Text.ElideRight
                                 wrapMode: Text.NoWrap
                             }
@@ -187,12 +286,32 @@ FocusScope {
                                 Layout.fillWidth: true
                                 text: row.modelData.genericName
                                 visible: text !== ""
+                                font.family: Theme.typography.sans
                                 font.pixelSize: 11
                                 color: Theme.colors.muted
                                 elide: Text.ElideRight
                                 wrapMode: Text.NoWrap
                             }
                         }
+                        ShellIcon {
+                            objectName: "launcherResultAction"
+                            Layout.preferredWidth: 20
+                            Layout.preferredHeight: 20
+                            name: "arrow"
+                            color: Theme.colors.accent
+                            opacity: row.selected ? 1 : 0
+                        }
+                    }
+                    Rectangle {
+                        objectName: "launcherSelectionMarker"
+                        anchors.left: parent.left
+                        anchors.leftMargin: 1
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 2
+                        height: 20
+                        radius: 2
+                        color: Theme.colors.accent
+                        visible: row.selected
                     }
                 }
             }
@@ -203,15 +322,23 @@ FocusScope {
                 visible: root.resultCount === 0
                 text: root.entries.length === 0 ? "No applications found" : "No matching applications"
                 color: Theme.colors.muted
+                font.family: Theme.typography.sans
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
+            }
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 1
+                color: Theme.colors.border
+                opacity: 0.6
             }
             ShellLabel {
                 objectName: "launcherHint"
                 Layout.fillWidth: true
-                text: "↑↓ Select · Enter Open · Tab Focus · Esc Close\nUp to 8 matches · Search to narrow results"
+                text: "Up / Down navigate   Enter open   Tab focus   Esc close\nUp to 8 matches | Search to narrow results"
+                font.family: Theme.typography.sans
+                font.pixelSize: 10
                 color: Theme.colors.muted
-                font.pixelSize: 11
             }
         }
     }

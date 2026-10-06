@@ -17,18 +17,7 @@ Flickable {
         contentX = Math.max(0, Math.min(Math.max(0, contentWidth - width), desired));
     }
     ScrollBar.horizontal: ScrollBar {
-        policy: ScrollBar.AsNeeded
-        active: true
-        height: 3
+        policy: ScrollBar.AlwaysOff
         padding: 0
-        contentItem: Rectangle {
-            implicitHeight: 3
-            implicitWidth: 20
-            radius: 1
-            color: Theme.colors.accent
-        }
-        background: Rectangle {
-            color: Theme.colors.overlay
-        }
     }
 }

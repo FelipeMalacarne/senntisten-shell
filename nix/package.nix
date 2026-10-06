@@ -5,8 +5,14 @@
   bash,
   coreutils,
   quickshell,
+  dejavu_fonts,
+  makeFontsConf,
+  distroId ? "nixos",
 }:
 let
+  fontConfig = makeFontsConf {
+    fontDirectories = [ dejavu_fonts ];
+  };
   assets = stdenvNoCC.mkDerivation {
     pname = "senntisten-shell-assets";
     version = "0.1.0";
@@ -43,11 +49,14 @@ writeShellApplication {
   text = ''
     export SENNTISTEN_QUICKSHELL="''${SENNTISTEN_QUICKSHELL:-${lib.getExe quickshell}}"
     export SENNTISTEN_SOURCE_DIR="''${SENNTISTEN_SOURCE_DIR:-${assets}/share/senntisten-shell/shell}"
+    distro_id=${lib.escapeShellArg distroId}
+    export SENNTISTEN_DISTRO_ID="''${SENNTISTEN_DISTRO_ID:-$distro_id}"
+    export FONTCONFIG_FILE="''${FONTCONFIG_FILE:-${fontConfig}}"
     exec ${assets}/libexec/senntisten-shell "$@"
   '';
   passthru = { inherit assets quickshell; };
   meta = {
-    description = "Personal Quickshell theme playground in a standalone window";
+    description = "Personal Hyprland bar, launcher, and appearance tools built with Quickshell";
     mainProgram = "senntisten-shell";
     platforms = lib.platforms.linux;
   };

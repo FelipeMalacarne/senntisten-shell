@@ -95,6 +95,37 @@ Rectangle {
             contentWidth: availableWidth
             rightPadding: scrollbar.visible ? 14 : 0
             clip: true
+
+            function containsItem(item) {
+                let current = item;
+                while (current && current !== scroll.contentItem.contentItem)
+                    current = current.parent;
+                return current === scroll.contentItem.contentItem;
+            }
+
+            function reveal(item) {
+                if (!item || !containsItem(item))
+                    return;
+                const viewport = scroll.contentItem;
+                const point = item.mapToItem(viewport.contentItem, 0, 0);
+                const margin = 8;
+                const top = point.y - margin;
+                const bottom = point.y + item.height + margin;
+                const minimum = viewport.originY;
+                const maximum = Math.max(minimum, viewport.contentHeight - viewport.height);
+                if (top < viewport.contentY)
+                    viewport.contentY = Math.max(minimum, top);
+                else if (bottom > viewport.contentY + viewport.height)
+                    viewport.contentY = Math.min(maximum, bottom - viewport.height);
+            }
+
+            Connections {
+                target: root.Window.window
+                function onActiveFocusItemChanged() {
+                    Qt.callLater(scroll.reveal, root.Window.window.activeFocusItem);
+                }
+            }
+
             ScrollBar.vertical: ScrollBar {
                 id: scrollbar
                 objectName: "contentScrollbar"
@@ -266,21 +297,26 @@ Rectangle {
                         objectName: "appearancePanel"
                         visible: root.panelOpen
                         Layout.fillWidth: true
-                        Layout.preferredWidth: root.wide ? 306 : -1
+                        Layout.preferredWidth: root.wide ? 288 : -1
                         Layout.alignment: Qt.AlignTop
                         ColumnLayout {
                             width: parent.width
-                            spacing: 14
-                            ShellLabel {
-                                text: "Appearance"
-                                font.pixelSize: 17
-                                font.weight: Font.DemiBold
-                            }
-                            ShellLabel {
+                            spacing: 12
+                            RowLayout {
                                 Layout.fillWidth: true
-                                text: "Choose a palette. Every surface updates together."
-                                color: Theme.colors.muted
-                                font.pixelSize: 12
+                                ShellLabel {
+                                    text: "Theme"
+                                    font.pixelSize: 17
+                                    font.weight: Font.DemiBold
+                                }
+                                Item {
+                                    Layout.fillWidth: true
+                                }
+                                ShellLabel {
+                                    text: Theme.name
+                                    color: Theme.colors.accent
+                                    font.pixelSize: 11
+                                }
                             }
                             Repeater {
                                 model: Theme.presets
@@ -307,12 +343,6 @@ Rectangle {
                                 checked: Theme.settings.reducedMotion
                                 enabled: Theme.ready && Theme.writable
                                 onToggled: Theme.setReducedMotion(checked)
-                            }
-                            ShellLabel {
-                                Layout.fillWidth: true
-                                text: "Keep transitions still. Your preference is saved with the theme."
-                                color: Theme.colors.muted
-                                font.pixelSize: 11
                             }
                         }
                     }

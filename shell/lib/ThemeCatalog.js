@@ -28,10 +28,6 @@ var catalog = [
 ];
 
 function decodeState(text) {
-    if (!text.trim()) {
-        return { settings: { theme: "catppuccin-mocha", reducedMotion: false },
-            status: "default", message: "", writable: true };
-    }
     var parsed;
     try { parsed = JSON.parse(text); } catch (error) { parsed = null; }
     if (parsed && typeof parsed.schemaVersion === "number" && parsed.schemaVersion > 1) {

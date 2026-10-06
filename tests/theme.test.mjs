@@ -100,11 +100,28 @@ test('both built-in presets provide the same complete semantic color contract', 
   assert.notDeepEqual(plain(api.paletteFor(presets[0].id)), plain(api.paletteFor(presets[1].id)));
 });
 
-test('a first launch uses defaults without inventing saved state', () => {
+test('an existing empty state file is recovered visibly', () => {
   const api = catalog();
   assert.equal(typeof api.decodeState, 'function', 'The appearance-state decoder must exist');
-  assert.deepEqual(plain(api.decodeState('')), {
+  for (const text of ['', '  \n\t']) assert.deepEqual(plain(api.decodeState(text)), {
     settings: { theme: 'catppuccin-mocha', reducedMotion: false },
-    status: 'default', message: '', writable: true
+    status: 'recovered', message: 'Invalid appearance state. Defaults are in use.', writable: true
   });
+});
+
+test('pressed primary controls keep readable foreground contrast', () => {
+  const api = catalog();
+  const luminance = hex => {
+    const values = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
+      .map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+    return values[0] * 0.2126 + values[1] * 0.7152 + values[2] * 0.0722;
+  };
+  const contrast = (a, b) => {
+    const first = luminance(a), second = luminance(b);
+    return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+  };
+  for (const { id } of api.listThemes()) {
+    const colors = api.paletteFor(id);
+    assert.ok(contrast(colors.text, colors.overlay) >= 4.5, `${id}: pressed primary control`);
+  }
 });

@@ -4,6 +4,7 @@ import Quickshell
 // Quickshell's static module scanner must see the directory loaded below.
 import "desktop"
 import "services"
+import "components"
 
 ShellRoot {
     FloatingWindow {
@@ -16,7 +17,7 @@ ShellRoot {
         Loader {
             id: barLoader
             width: parent.width
-            height: 38
+            height: 44
             source: "desktop/BarContent.qml"
         }
         Loader {
@@ -77,6 +78,7 @@ ShellRoot {
             name: "SenntistenBar"
             when: Theme.ready && window.visible
             property var executed: []
+            property string checkpoint: ""
             SignalSpy {
                 id: launcherSpy
                 target: barLoader.item
@@ -99,6 +101,7 @@ ShellRoot {
             }
             function init() {
                 executed = executed.concat([qtest_results.functionName]);
+                checkpoint = "setup";
                 tryCompare(barLoader, "status", Loader.Ready);
                 barLoader.width = 1100;
                 compositor.monitors.values = [
@@ -133,7 +136,24 @@ ShellRoot {
             }
             function cleanup() {
                 if (qtest_results.failed)
-                    console.log("BAR_FAILED_CASE " + qtest_results.functionName);
+                    console.log("BAR_FAILED_CASE " + JSON.stringify({
+                        name: qtest_results.functionName,
+                        checkpoint: checkpoint,
+                        saveStatus: Theme.saveStatus,
+                        theme: Theme.settings.theme,
+                        geometry: ["barClock", "barClockGroup", "barWorkspaceViewport", "barTrayViewport", "barAudio", "barAppearance"].map(name => {
+                            const item = findChild(barLoader.item, name);
+                            const p = item ? item.mapToItem(barLoader.item, 0, 0) : Qt.point(0, 0);
+                            return {
+                                name: name,
+                                x: p.x,
+                                y: p.y,
+                                width: item ? item.width : 0,
+                                height: item ? item.height : 0
+                            };
+                        }),
+                        trayActivations: tray.activations
+                    }));
             }
             onCompletedChanged: if (completed) {
                 console.log("SENNTISTEN_BAR_RESULT " + JSON.stringify({
@@ -187,7 +207,8 @@ ShellRoot {
                 const clock = findChild(bar, "barClockSource");
                 verify(label !== null && clock !== null);
                 verify(clock.enabled);
-                compare(label.text, Qt.formatDateTime(clock.date, "ddd d MMM · HH:mm"));
+                compare(label.text, Qt.formatDateTime(clock.date, "HH:mm"));
+                compare(findChild(bar, "barDate").text, Qt.formatDateTime(clock.date, "ddd, dd MMM"));
                 compare(Qt.formatDateTime(clock.date, "yyyy-MM-dd HH:mm"), Qt.formatDateTime(new Date(), "yyyy-MM-dd HH:mm"));
                 clock.precision = SystemClock.Seconds;
                 const before = clock.date.getTime();
@@ -353,41 +374,55 @@ ShellRoot {
                 bar.services.tray = tray;
                 bar.hostWindow = window;
                 tray.items.values = [trayItem(false)];
+                checkpoint = "tray count";
                 tryCompare(bar, "trayCount", 1);
+                waitForRendering(bar);
                 const button = findChild(bar, "tray-test-tray");
+                checkpoint = "tray button";
                 verify(button !== null);
+                checkpoint = "tray button geometry";
                 tryVerify(() => button.width > 0 && button.height > 0);
+                checkpoint = "tray accessible name";
                 compare(button.Accessible.name, "Tray app");
+                checkpoint = "tray viewport geometry";
                 tryVerify(() => {
                     const viewport = findChild(bar, "barTrayViewport");
                     const p = button.mapToItem(viewport, 0, 0);
                     return p.x >= 0 && p.x + button.width <= viewport.width;
                 });
-                mouseClick(button);
+                checkpoint = "tray primary action";
+                const center = button.mapToItem(window.contentItem, button.width / 2, button.height / 2);
+                mouseClick(window.contentItem, center.x, center.y, Qt.LeftButton);
                 compare(tray.activations, 1);
+                checkpoint = "tray context menu";
                 mouseClick(button, button.width / 2, button.height / 2, Qt.RightButton);
                 compare(tray.menus, 1);
                 compare(tray.menuWindow, window);
                 verify(tray.menuPoint.x >= 0 && tray.menuPoint.y >= 0);
+                checkpoint = "tray secondary action";
                 mouseClick(button, button.width / 2, button.height / 2, Qt.MiddleButton);
                 compare(tray.secondaryActivations, 1);
                 mouseWheel(button, button.width / 2, button.height / 2, 0, 120);
                 compare(tray.scrollDelta, 120);
                 compare(tray.horizontalScroll, false);
+                checkpoint = "tray keyboard menu";
                 button.forceActiveFocus();
                 keyClick(Qt.Key_Menu);
                 compare(tray.menus, 2);
                 tray.items.values = [trayItem(true)];
+                checkpoint = "tray menu-only replace";
                 tryVerify(() => findChild(bar, "tray-test-tray") !== button);
                 const menuOnly = findChild(bar, "tray-test-tray");
+                checkpoint = "tray menu-only focus";
                 menuOnly.forceActiveFocus();
                 keyClick(Qt.Key_Space);
                 compare(tray.activations, 1);
                 compare(tray.menus, 3);
                 tray.items.values = [];
+                checkpoint = "tray empty state";
                 tryCompare(bar, "trayCount", 0);
                 verify(findChild(bar, "barTrayStatus").visible);
-                compare(findChild(bar, "barTrayStatus").text, "Tray —");
+                compare(findChild(bar, "barTrayStatus").text, "Tray");
             }
             function test_panel_wrapper_compiles_without_constructing_wayland_surfaces() {
                 const component = Qt.createComponent("desktop/Bar.qml");
@@ -410,8 +445,10 @@ ShellRoot {
                 barLoader.width = 480;
                 tryCompare(bar, "workspaceCount", 12);
                 tryCompare(bar, "trayCount", 6);
+                waitForRendering(bar);
                 for (const name of ["barLauncher", "barAudio", "barAppearance", "barClock"]) {
                     const item = findChild(bar, name);
+                    checkpoint = "narrow " + name;
                     tryVerify(() => {
                         const p = item.mapToItem(bar, 0, 0);
                         return p.x >= 0 && p.x + item.width <= bar.width && p.y >= 0 && p.y + item.height <= bar.height;
@@ -419,6 +456,7 @@ ShellRoot {
                 }
                 const workspaceView = findChild(bar, "barWorkspaceViewport");
                 const lastWorkspace = findChild(bar, "workspace-12");
+                checkpoint = "narrow focused workspace reveal";
                 lastWorkspace.forceActiveFocus();
                 tryVerify(() => {
                     const p = lastWorkspace.mapToItem(workspaceView, 0, 0);
@@ -426,6 +464,7 @@ ShellRoot {
                 }, 1000, "Keyboard focus must scroll to the workspace");
                 const trayView = findChild(bar, "barTrayViewport");
                 const lastTray = findChild(bar, "tray-item5");
+                checkpoint = "narrow focused tray reveal";
                 lastTray.forceActiveFocus();
                 tryVerify(() => {
                     const p = lastTray.mapToItem(trayView, 0, 0);
@@ -435,23 +474,77 @@ ShellRoot {
             function test_preview_indicator_is_explicit_and_uses_shared_theme_tokens() {
                 const bar = barLoader.item;
                 const preview = findChild(bar, "barPreview");
+                checkpoint = "initial visibility";
                 verify(preview !== null);
                 verify(!preview.visible);
                 bar.popAbove = true;
                 tryCompare(preview, "visible", true);
                 compare(preview.text, "Preview");
                 for (const theme of ["gruvbox", "catppuccin-mocha"]) {
+                    checkpoint = theme + " save";
                     verify(Theme.selectTheme(theme));
                     tryCompare(Theme, "saveStatus", "saved");
-                    tryCompare(bar, "color", Theme.colors.background);
+                    checkpoint = theme + " bar color";
+                    const surface = findChild(bar, "barSurface");
+                    tryCompare(surface, "color", Theme.colors.surface);
+                    checkpoint = theme + " preview color";
                     tryCompare(preview, "color", Theme.colors.warning);
                     const launcher = findChild(bar, "barLauncher");
-                    tryCompare(launcher.background, "color", Theme.colors.accent);
-                    compare(launcher.contentItem.font.family, "Noto Sans");
+                    checkpoint = theme + " launcher color";
+                    verify(launcher.background.color.toString() !== Theme.colors.accent);
+                    checkpoint = theme + " vector color";
+                    compare(findChild(launcher, "barDistroMark").color.toString(), Theme.colors.accent);
                 }
                 barLoader.width = 480;
                 const appearance = findChild(bar, "barAppearance");
+                checkpoint = "narrow appearance geometry";
                 tryVerify(() => appearance.x + appearance.width <= bar.width, 1000);
+                const output = Quickshell.env("SENNTISTEN_CAPTURE_DIR");
+                if (output) {
+                    barLoader.width = 1100;
+                    bar.popAbove = false;
+                    grabImage(bar).save(output + "/bar-catppuccin.png");
+                }
+            }
+            function test_bar_uses_a_quiet_surface_and_one_active_workspace_cue() {
+                const bar = barLoader.item;
+                const surface = findChild(bar, "barSurface");
+                verify(surface !== null);
+                compare(surface.color.toString(), Theme.colors.surface);
+                verify(findChild(bar, "barLeftGroup") === null);
+                verify(findChild(bar, "barCenterGroup") === null);
+                verify(findChild(bar, "barRightGroup") === null);
+                compositor.workspaces.values = [workspace(1, "DP-1", true), workspace(2, "DP-1", false)];
+                tryCompare(bar, "workspaceCount", 2);
+                const active = findChild(bar, "workspace-1");
+                const inactive = findChild(bar, "workspace-2");
+                verify(active.background.color.toString() !== Theme.colors.accent);
+                verify(inactive.background.color.toString() !== Theme.colors.accent);
+                const activeMarker = findChild(active, "workspaceActiveMarker");
+                const inactiveMarker = findChild(inactive, "workspaceActiveMarker");
+                verify(activeMarker !== null && inactiveMarker !== null);
+                verify(activeMarker.visible && !inactiveMarker.visible);
+                compare(activeMarker.width, 22);
+                compare(activeMarker.height, 8);
+                compare(activeMarker.radius, 4);
+                const dot = findChild(inactive, "workspaceDot");
+                verify(dot !== null && dot.visible);
+                compare(dot.width, 8);
+                compare(dot.height, 8);
+                verify(active.width >= 32 && active.height >= 32, "Pills retain native hit targets");
+                compare(active.Accessible.selected, true);
+                verify(active.Accessible.name.includes("Workspace 1, active"));
+                const output = Quickshell.env("SENNTISTEN_CAPTURE_DIR");
+                if (output)
+                    grabImage(bar).save(output + "/bar-populated-default.png");
+                checkpoint = "focus request";
+                inactive.forceActiveFocus();
+                checkpoint = "focus ownership";
+                verify(inactive.activeFocus);
+                checkpoint = "focused inactive surface";
+                tryCompare(inactive.background, "color", Theme.colors.overlay);
+                if (output)
+                    grabImage(bar).save(output + "/bar-populated-catppuccin.png");
             }
             function test_selected_workspace_is_revealed_after_live_model_updates() {
                 const bar = barLoader.item;
@@ -483,12 +576,12 @@ ShellRoot {
                 const appearance = findChild(bar, "barAppearance");
                 tryVerify(() => {
                     const p = appearance.mapToItem(bar, 0, 0);
-                    return Math.abs(p.x + appearance.width - (bar.width - 8)) < 1;
+                    return Math.abs(p.x + appearance.width - (bar.width - 24)) < 1;
                 }, 1000, "A hidden foreign-monitor title must leave an expanding spacer");
             }
             function test_primary_actions_are_compact_and_keyboard_accessible() {
                 const bar = barLoader.item;
-                verify(bar.implicitHeight >= 30 && bar.implicitHeight <= 44);
+                compare(bar.implicitHeight, 44);
                 const launcher = findChild(bar, "barLauncher");
                 const appearance = findChild(bar, "barAppearance");
                 verify(launcher !== null && appearance !== null);
@@ -499,6 +592,87 @@ ShellRoot {
                 compare(appearanceSpy.count, 1);
                 verify(launcher.Accessible.name.length > 0);
                 verify(appearance.Accessible.name.length > 0);
+            }
+            function test_orbit_clock_stays_centered_without_control_collisions() {
+                const bar = barLoader.item;
+                compositor.workspaces.values = Array.from({
+                    length: 12
+                }, (_, i) => workspace(i + 1, "DP-1", i === 0));
+                tray.items.values = Array.from({
+                    length: 6
+                }, (_, i) => Object.assign(trayItem(false), {
+                        id: "item" + i
+                    }));
+                compositor.activeToplevel = {
+                    title: "A very long native window title that must yield to the clock",
+                    monitor: {
+                        name: "DP-1"
+                    }
+                };
+                pipewire.ready = false;
+                for (const preview of [false, true]) {
+                    bar.popAbove = preview;
+                    for (const width of [320, 360, 480, 700, 900, 1100]) {
+                        checkpoint = "clock collision " + width + " preview " + preview;
+                        barLoader.width = width;
+                        const center = findChild(bar, "barClockGroup");
+                        verify(center !== null, "Clock and date must share a centered group");
+                        tryVerify(() => Math.abs(center.x + center.width / 2 - bar.width / 2) <= 1);
+                        for (const name of ["barLauncher", "barPreview", "barWorkspaceViewport", "barWindowTitle", "barWorkspaceStatus", "barTrayViewport", "barTrayStatus", "barAudio", "barAppearance"]) {
+                            const item = findChild(bar, name);
+                            tryVerify(() => {
+                                if (!item.visible || item.width <= 0)
+                                    return true;
+                                const p = item.mapToItem(bar, 0, 0);
+                                return p.x >= -0.1 && p.x + item.width <= bar.width + 0.1 && (p.x + item.width <= center.x + 0.1 || p.x >= center.x + center.width - 0.1);
+                            }, 1000, name + " must not collide with the centered clock");
+                        }
+                        const date = findChild(bar, "barDate");
+                        compare(date.visible, width >= 700);
+                    }
+                }
+            }
+            function test_orbit_entry_points_use_local_vectors_and_neutral_unknown_distro() {
+                const bar = barLoader.item;
+                const mark = findChild(bar, "barDistroMark");
+                verify(mark !== null, "Launcher entry uses a local distro vector");
+                const expected = (Quickshell.env("SENNTISTEN_DISTRO_ID") || "nixos").trim().toLowerCase();
+                compare(mark.distroId, expected);
+                compare(mark.isNixos, expected === "nixos");
+                const settings = findChild(bar, "barSettingsIcon");
+                const audio = findChild(bar, "barAudioIcon");
+                verify(settings !== null && audio !== null);
+                compare(settings.name, "settings");
+                compare(audio.name, "speaker");
+                sink.audio.muted = true;
+                tryCompare(audio, "name", "speaker-muted");
+                const original = mark.distroId;
+                try {
+                    mark.distroId = "nixos";
+                    tryCompare(mark, "isNixos", true);
+                    waitForRendering(bar);
+                    const nixos = grabImage(bar);
+                    mark.distroId = "unknown-test-distribution";
+                    tryCompare(mark, "isNixos", false);
+                    verify(!mark.Accessible.name.includes("NixOS"));
+                    waitForRendering(bar);
+                    const neutral = grabImage(bar);
+                    const p = mark.mapToItem(bar, 0, 0);
+                    let pixels = 0;
+                    let differences = 0;
+                    for (let y = Math.ceil(p.y); y < Math.floor(p.y + mark.height); y++) {
+                        for (let x = Math.ceil(p.x); x < Math.floor(p.x + mark.width); x++) {
+                            if (neutral.pixel(x, y) !== Theme.colors.surface)
+                                pixels++;
+                            if (nixos.pixel(x, y) !== neutral.pixel(x, y))
+                                differences++;
+                        }
+                    }
+                    verify(pixels > 0, "Unknown distro must render a neutral mark");
+                    verify(differences > 0, "Unknown distro must not render the NixOS snowflake");
+                } finally {
+                    mark.distroId = original;
+                }
             }
         }
     }

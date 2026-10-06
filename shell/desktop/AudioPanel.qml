@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell
 import "../components"
 import "../services"
 
@@ -8,10 +9,25 @@ Surface {
     id: root
     required property var services
     signal closeRequested
-    padding: 16
+    signal settingsRequested
+    padding: Theme.metrics.panelPadding
     implicitWidth: 340
     implicitHeight: content.implicitHeight + topPadding + bottomPadding
     Keys.onEscapePressed: root.closeRequested()
+
+    function focusInitial(restoreSettingsFocus) {
+        if (restoreSettingsFocus)
+            settingsButton.forceActiveFocus();
+        else if (volumeSlider.enabled)
+            volumeSlider.forceActiveFocus();
+        else
+            closeButton.forceActiveFocus();
+    }
+
+    SystemClock {
+        id: clock
+        precision: SystemClock.Minutes
+    }
 
     ColumnLayout {
         id: content
@@ -20,16 +36,106 @@ Surface {
         RowLayout {
             Layout.fillWidth: true
             ShellLabel {
-                text: "Audio output"
-                font.weight: Font.DemiBold
+                text: "YOUR DESKTOP"
+                color: Theme.colors.subtle
+                font.family: Theme.typography.mono
+                font.pixelSize: 9
+                font.letterSpacing: 1.1
                 Layout.fillWidth: true
             }
             ShellButton {
+                id: closeButton
                 objectName: "audioClose"
-                text: "Close"
+                text: "×"
                 compact: true
-                Accessible.name: "Close audio controls"
+                quiet: true
+                implicitWidth: 32
+                padding: 6
+                leftPadding: padding
+                rightPadding: padding
+                Accessible.name: "Close Quick Controls"
                 onClicked: root.closeRequested()
+                contentItem: ShellIcon {
+                    name: "close"
+                }
+            }
+        }
+        ShellLabel {
+            text: "Your space"
+            font.family: Theme.typography.serif
+            font.pixelSize: 25
+            Layout.fillWidth: true
+        }
+        ShellLabel {
+            text: Qt.formatDateTime(clock.date, "dddd, MMMM d")
+            color: Theme.colors.muted
+            font.pixelSize: 11
+            Layout.fillWidth: true
+        }
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+            Repeater {
+                model: [
+                    {
+                        name: "quickNetwork",
+                        title: "Network",
+                        icon: "wifi",
+                        description: "Wi-Fi controls"
+                    },
+                    {
+                        name: "quickBluetooth",
+                        title: "Bluetooth",
+                        icon: "bluetooth",
+                        description: "Device controls"
+                    }
+                ]
+                ShellButton {
+                    required property var modelData
+                    objectName: modelData.name
+                    text: modelData.title
+                    enabled: false
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    Layout.minimumWidth: 0
+                    implicitHeight: 76
+                    Accessible.name: modelData.title + ", Planned"
+                    contentItem: ColumnLayout {
+                        spacing: 6
+                        RowLayout {
+                            Layout.fillWidth: true
+                            ShellIcon {
+                                name: modelData.icon
+                                color: Theme.colors.accent
+                                Layout.preferredWidth: 18
+                                Layout.preferredHeight: 18
+                            }
+                            Item {
+                                Layout.fillWidth: true
+                            }
+                            ShellLabel {
+                                text: "PLANNED"
+                                font.family: Theme.typography.mono
+                                font.pixelSize: 7
+                                color: Theme.colors.subtle
+                            }
+                        }
+                        ShellLabel {
+                            text: modelData.title
+                            font.pixelSize: 11
+                            color: Theme.colors.muted
+                        }
+                        ShellLabel {
+                            text: modelData.description
+                            font.pixelSize: 9
+                            color: Theme.colors.subtle
+                        }
+                    }
+                    background: Rectangle {
+                        color: Theme.colors.elevated
+                        radius: Theme.metrics.controlRadius
+                    }
+                }
             }
         }
         ShellLabel {
@@ -50,7 +156,7 @@ Surface {
         RowLayout {
             Layout.fillWidth: true
             ShellLabel {
-                text: "Volume"
+                text: "Output volume"
                 Layout.fillWidth: true
             }
             ShellLabel {
@@ -123,6 +229,58 @@ Surface {
                 enabled: root.services.audioAvailable
                 Accessible.name: "Increase volume by five percent"
                 onClicked: root.services.setVolume(root.services.volume + 0.05)
+            }
+        }
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: 1
+            color: Theme.colors.border
+        }
+        ShellButton {
+            id: settingsButton
+            objectName: "quickSettings"
+            text: "Settings"
+            Layout.fillWidth: true
+            Layout.minimumWidth: 0
+            implicitHeight: 56
+            quiet: true
+            borderless: true
+            leftPadding: 0
+            rightPadding: 0
+            Accessible.name: "Open Settings"
+            onClicked: root.settingsRequested()
+            contentItem: RowLayout {
+                spacing: 12
+                ShellIcon {
+                    name: "settings"
+                    color: Theme.colors.muted
+                    Layout.preferredWidth: 18
+                    Layout.preferredHeight: 18
+                }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                    spacing: 4
+                    ShellLabel {
+                        text: "Settings"
+                        font.pixelSize: 13
+                    }
+                    ShellLabel {
+                        text: "Appearance and desktop preferences"
+                        font.pixelSize: 10
+                        color: Theme.colors.muted
+                        Layout.fillWidth: true
+                        Layout.minimumWidth: 0
+                        elide: Text.ElideRight
+                        wrapMode: Text.NoWrap
+                    }
+                }
+                ShellIcon {
+                    name: "arrow"
+                    color: Theme.colors.muted
+                    Layout.preferredWidth: 16
+                    Layout.preferredHeight: 16
+                }
             }
         }
     }

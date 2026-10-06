@@ -6,7 +6,7 @@ import Quickshell.Wayland
 PanelWindow {
     id: root
     property bool opened: false
-    signal dismissed()
+    signal dismissed
 
     visible: opened
     color: "transparent"
@@ -24,7 +24,8 @@ PanelWindow {
     function resetSearch() {
         content.resetSearch();
     }
-    onVisibleChanged: if (visible) Qt.callLater(resetSearch)
+    onVisibleChanged: if (visible)
+        Qt.callLater(resetSearch)
 
     LauncherContent {
         id: content

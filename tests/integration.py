@@ -29,12 +29,20 @@ class RunningShell:
             self.state_file.write_text(initial_state)
         self.runtime = self.base / "runtime"
         self.runtime.mkdir(mode=0o700)
+        (self.base / "home").mkdir(mode=0o700)
         self.env = os.environ.copy()
         self.env.update({
+            "HOME": str(self.base / "home"),
             "SENNTISTEN_STATE_DIR": str(self.state),
             "XDG_RUNTIME_DIR": str(self.runtime),
             "XDG_CACHE_HOME": str(self.base / "cache"),
             "XDG_CONFIG_HOME": str(self.base / "config"),
+            "XDG_CONFIG_DIRS": str(self.base / "config-dirs"),
+            "XDG_DATA_HOME": str(self.base / "data"),
+            "XDG_DATA_DIRS": str(self.base / "data-dirs"),
+            "XDG_STATE_HOME": str(self.state),
+            "DBUS_SESSION_BUS_ADDRESS": "unix:path=" + str(self.base / "no-session-bus"),
+            "PIPEWIRE_REMOTE": str(self.base / "no-pipewire"),
             "QT_QPA_PLATFORM": "offscreen",
             "QT_QUICK_BACKEND": "software",
             "QT_QUICK_CONTROLS_STYLE": "Basic",
@@ -42,6 +50,7 @@ class RunningShell:
         })
         self.env.pop("WAYLAND_DISPLAY", None)
         self.env.pop("DISPLAY", None)
+        self.env.pop("HYPRLAND_INSTANCE_SIGNATURE", None)
         self.process = None
         self.log = None
 
@@ -199,6 +208,17 @@ class ShellIntegration(unittest.TestCase):
         self.assertEqual(shell.state_file.read_text(), "{incomplete")
         shell.call("theme", "gruvbox")
         shell.wait_for(lambda state: state["saveStatus"] == "saved")
+        self.assertEqual(json.loads(shell.state_file.read_text())["theme"], "gruvbox")
+
+    def test_existing_empty_state_is_reported_and_preserved_until_selection(self):
+        original = "  \n\t"
+        shell = self.launch(original)
+        state = shell.status()
+        self.assertEqual(state["saveStatus"], "recovered")
+        self.assertTrue(state["message"])
+        self.assertEqual(shell.state_file.read_text(), original)
+        shell.call("theme", "gruvbox")
+        shell.wait_for(lambda current: current["saveStatus"] == "saved")
         self.assertEqual(json.loads(shell.state_file.read_text())["theme"], "gruvbox")
 
     def test_unknown_theme_is_rejected_without_writing(self):

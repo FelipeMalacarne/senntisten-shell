@@ -3,7 +3,7 @@ import "../services"
 
 Text {
     color: Theme.colors.text
-    font.family: "Noto Sans"
+    font.family: Theme.typography.sans
     font.pixelSize: 14
     textFormat: Text.PlainText
     wrapMode: Text.WordWrap

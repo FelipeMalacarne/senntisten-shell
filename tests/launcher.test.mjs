@@ -34,7 +34,7 @@ function fixture(t) {
   writeFileSync(path.join(source, "PlaygroundRoot.qml"), "// Alternate entrypoint fixture.\n");
   if (existsSync(projectLauncher)) copyFileSync(projectLauncher, launcher);
   // Observe the external process boundary without opening a real desktop window.
-  writeFileSync(quickshell, `#!${process.execPath}\nconst keys = ["SENNTISTEN_STATE_DIR", "SENNTISTEN_MODE", "SENNTISTEN_PREVIEW", "QT_QUICK_CONTROLS_STYLE", "QT_QUICK_BACKEND", "QSG_RHI_BACKEND"]; const env = Object.fromEntries(keys.filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]])); console.log(JSON.stringify({ args: process.argv.slice(2), env }));\nprocess.exit(Number(process.env.FAKE_EXIT ?? 0));\n`, { mode: 0o755 });
+  writeFileSync(quickshell, `#!${process.execPath}\nconst keys = ["SENNTISTEN_STATE_DIR", "SENNTISTEN_MODE", "SENNTISTEN_PREVIEW", "SENNTISTEN_DISTRO_ID", "QT_QUICK_CONTROLS_STYLE", "QT_QUICK_BACKEND", "QSG_RHI_BACKEND"]; const env = Object.fromEntries(keys.filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]])); console.log(JSON.stringify({ args: process.argv.slice(2), env }));\nprocess.exit(Number(process.env.FAKE_EXIT ?? 0));\n`, { mode: 0o755 });
   const env = { ...process.env };
   for (const key of Object.keys(env)) {
     if (key.startsWith("SENNTISTEN_") || key.startsWith("QT_") || key.startsWith("QSG_")) delete env[key];
@@ -113,6 +113,12 @@ test("rejects invalid or conflicting mode selections without startup writes", (t
 test("adds duplicate protection without daemonizing", (t) => {
   const f = fixture(t);
   assert.deepEqual(launched(f.run()).args, ["--path", f.source, "--no-duplicate"]);
+});
+
+test("distribution branding has an explicit default and preserves an override", (t) => {
+  const f = fixture(t);
+  assert.equal(launched(f.run()).env.SENNTISTEN_DISTRO_ID, "nixos");
+  assert.equal(launched(f.run([], { SENNTISTEN_DISTRO_ID: "other" })).env.SENNTISTEN_DISTRO_ID, "other");
 });
 
 test("forwards arguments literally without shell evaluation", (t) => {

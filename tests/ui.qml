@@ -40,6 +40,13 @@ ShellRoot {
                 compare(motionLabel.color.toString(), Theme.colors.text);
             }
 
+            function test_theme_options_are_compact_and_scannable_rows() {
+                const option = findChild(app.contentItem, "theme-gruvbox");
+                verify(option !== null);
+                verify(option.height <= 80, "Theme choices should stay compact instead of becoming cards");
+                verify(option.width > option.height * 2, "Theme choices should read as horizontal rows");
+            }
+
             function test_keyboard_shortcuts_and_primary_button_share_actions() {
                 const appearance = findChild(app.contentItem, "appearanceButton");
                 appearance.forceActiveFocus();
@@ -87,12 +94,27 @@ ShellRoot {
                     const scrollbar = findChild(app.contentItem, "contentScrollbar");
                     verify(scrollbar !== null && scrollbar.visible, "Overflow needs a visible scrollbar");
                     verify(scroll.contentItem.contentHeight > scroll.contentItem.height);
-                    scroll.contentItem.contentY = scroll.contentItem.contentHeight - scroll.contentItem.height;
                     const motion = findChild(app.contentItem, "reducedMotionSwitch");
+                    const gruvbox = findChild(app.contentItem, "theme-gruvbox");
+                    scroll.contentItem.contentY = 0;
+                    trigger.forceActiveFocus();
+                    let attempts = 0;
+                    while (!motion.activeFocus && attempts++ < 12)
+                        keyClick(Qt.Key_Tab);
+                    compare(motion.activeFocus, true, "Tab must reach reduced motion");
+                    verify(scroll.contentItem.contentY > 0, "Focused controls below the viewport must be revealed");
                     tryVerify(() => {
                         const point = motion.mapToItem(app.view, 0, 0);
                         return point.y > 0 && point.y + motion.height < footer.y;
                     });
+                    keyClick(Qt.Key_Tab, Qt.ShiftModifier);
+                    compare(gruvbox.activeFocus, true, "Shift+Tab must return to the preceding palette");
+                    tryVerify(() => {
+                        const point = gruvbox.mapToItem(app.view, 0, 0);
+                        return point.y > 0 && point.y + gruvbox.height < footer.y;
+                    });
+                    keyClick(Qt.Key_Tab);
+                    compare(motion.activeFocus, true);
                     const previous = Theme.settings.reducedMotion;
                     mouseClick(motion);
                     tryCompare(Theme, "saveStatus", "saved");
@@ -164,6 +186,8 @@ ShellRoot {
                 app.view.panelOpen = true;
                 const gruvbox = findChild(app.contentItem, "theme-gruvbox");
                 verify(gruvbox !== null, "Appearance must offer a Gruvbox preset");
+                Theme.selectTheme("catppuccin-mocha");
+                tryCompare(Theme, "saveStatus", "saved");
                 mouseClick(gruvbox);
                 tryCompare(Theme, "saveStatus", "saved");
                 compare(Theme.settings.theme, "gruvbox");

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Senntisten / Desktop Studies</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="studies.css?revision=3-alignment">
+  <script src="studies.js?revision=3-alignment" defer></script>
+</head>
+<body>
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <!-- NixOS snowflake: Simple Icons, CC0-1.0. See README.md. -->
+      <symbol id="distro-nixos" viewBox="0 0 24 24"><path d="M7.352 1.592l-1.364.002L5.32 2.75l1.557 2.713-3.137-.008-1.32 2.34H14.11l-1.353-2.332-3.192-.006-2.214-3.865zm6.175 0l-2.687.025 5.846 10.127 1.341-2.34-1.59-2.765 2.24-3.85-.683-1.182h-1.336l-1.57 2.705-1.56-2.72zm6.887 4.195l-5.846 10.125 2.696-.008 1.601-2.76 4.453.016.682-1.183-.666-1.157-3.13-.008L21.778 8.1l-1.365-2.313zM9.432 8.086l-2.696.008-1.601 2.76-4.453-.016L0 12.02l.666 1.157 3.13.008-1.575 2.71 1.365 2.315L9.432 8.086zM7.33 12.25l-.006.01-.002-.004-1.342 2.34 1.59 2.765-2.24 3.85.684 1.182H7.35l.004-.006h.001l1.567-2.698 1.558 2.72 2.688-.026-.004-.006h.01L7.33 12.25zm2.55 3.93l1.354 2.332 3.192.006 2.215 3.865 1.363-.002.668-1.156-1.557-2.713 3.137.008 1.32-2.34H9.881Z" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+      <symbol id="grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></symbol>
+      <symbol id="speaker" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4Z"/><path d="M17 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol>
+      <symbol id="wifi" viewBox="0 0 24 24"><path d="M3 8a14 14 0 0 1 18 0M6 12a9 9 0 0 1 12 0m-9 4a4 4 0 0 1 6 0"/><circle cx="12" cy="20" r=".8" fill="currentColor"/></symbol>
+      <symbol id="bluetooth" viewBox="0 0 24 24"><path d="m7 7 10 10-5 4V3l5 4L7 17"/></symbol>
+      <symbol id="battery" viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M23 10v4M6 10v4m4-4v4m4-4v4"/></symbol>
+      <symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
+      <symbol id="terminal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m7 9 3 3-3 3m6 0h4"/></symbol>
+      <symbol id="browser" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></symbol>
+      <symbol id="folder" viewBox="0 0 24 24"><path d="M3 7V5h7l2 3h9v11H3Z"/><path d="M3 11h18"/></symbol>
+      <symbol id="code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-5-15-2 18"/></symbol>
+      <symbol id="gear" viewBox="0 0 24 24"><path d="m10 3-1 3-3-1-2 4 2 3-2 3 2 4 3-1 1 3h4l1-3 3 1 2-4-2-3 2-3-2-4-3 1-1-3Z"/><circle cx="12" cy="12" r="3"/></symbol>
+      <symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+      <symbol id="arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+      <symbol id="play" viewBox="0 0 24 24"><path d="m9 5 11 7-11 7Z"/></symbol>
+      <symbol id="bell" viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0v6l2 3H4l2-3Zm4 12h4"/></symbol>
+      <symbol id="check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+      <symbol id="monitor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="13" rx="2"/><path d="M12 16v5m-5 0h10"/></symbol>
+    </defs>
+  </svg>
+  <div class="review-board">
+    <header class="masthead">
+      <a class="wordmark" href="#studies"><svg class="icon" aria-hidden="true"><use href="#distro-nixos"/></svg>Senntisten<span>Desktop Studies</span></a>
+      <span class="edition">Design exploration / 003</span>
+    </header>
+    <main id="studies">
+      <div class="introduction">
+        <div><p class="eyebrow">Orbit / revision 03</p><h1>Softer surfaces.<br>A grounded desktop.</h1></div>
+        <div class="intro-note"><span class="study-stamp">Orbit, refined. Citadel, for reference.</span><p>Keep the expressive panels; anchor the bar to the screen edge. Appearance now has its own Settings window.</p><p class="preview-disclaimer">Design preview only. All apps, time, and system data are fixtures. Nothing launches or changes your session.</p></div>
+      </div>
+      <div class="review-tools" aria-label="Design review controls">
+        <div class="concept-selector" role="group" aria-label="Desktop concept">
+          <button type="button" data-select-concept="citadel" aria-pressed="false"><span>01</span> Citadel</button>
+          <button type="button" data-select-concept="orbit" aria-pressed="true"><span>02</span> Orbit</button>
+        </div>
+        <div class="preview-options">
+          <div><label for="palette">Palette</label><select id="palette"><option value="catppuccin-mocha">Catppuccin Mocha</option><option value="gruvbox">Gruvbox</option></select></div>
+          <div><label for="surface">Surface</label><select id="surface"><option value="overview">Launcher + controls</option><option value="desktop">Desktop</option><option value="launcher">Launcher</option><option value="controls">Quick Controls</option><option value="settings">Settings window</option></select></div>
+          <div><label for="example-state">Example state</label><select id="example-state"><option value="normal">Normal</option><option value="unavailable">Audio unavailable</option><option value="save-error">Settings save failure</option></select></div>
+        </div>
+      </div>
+      <div id="desktops"></div>
+      <noscript><p class="no-script">Enable JavaScript to explore the local design studies. This page makes no network requests to external services.</p></noscript>
+      <section class="concept-notes" aria-labelledby="concept-title">
+        <div class="concept-heading"><span id="concept-number">01</span><div><p class="eyebrow">Architectural / deliberate / focused</p><h2 id="concept-title">Citadel</h2></div></div>
+        <div class="design-principle"><h3>Presence</h3><p id="presence-note">An edge-integrated bar. Crisp divisions, measured spacing, and a workspace indicator with a clear sense of place.</p></div>
+        <div class="design-principle"><h3>Workflow</h3><p id="workflow-note">Search is the center of gravity. System controls are a compact instrument panel, not a dashboard competing with your work.</p></div>
+        <div class="design-principle"><h3>Tradeoff</h3><p id="tradeoff-note">More disciplined than playful. Strong hierarchy has to come from type and composition, not rounded cards everywhere.</p></div>
+      </section>
+      <div class="review-feedback" role="status" aria-live="polite">Explore a direction, switch palettes, and try the preview controls. No choice is saved.</div>
+    </main>
+    <footer class="review-footer"><span>Senntisten / made for your own desktop</span><span>Concepts, not production QML. No session integration.</span></footer>
+  </div>
+</body>
+</html>

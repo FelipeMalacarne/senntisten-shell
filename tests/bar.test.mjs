@@ -21,3 +21,8 @@ test("native bar reserves only its top edge; preview never reserves space", () =
     assert.match(bar, /PopupWindow\s*\{/);
     assert.match(bar, /grabFocus:\s*true/);
 });
+
+test("the desktop root enables QApplication for native tray menus", () => {
+    const root = readFileSync(new URL("../shell/shell.qml", import.meta.url), "utf8");
+    assert.match(root, /^\/\/@ pragma UseQApplication\s*$/m);
+});

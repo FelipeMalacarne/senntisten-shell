@@ -19,7 +19,9 @@ QS = os.environ.get("SENNTISTEN_QUICKSHELL") or shutil.which("quickshell")
 
 class BarIntegration(unittest.TestCase):
     def test_real_bar_controls(self):
-        self.assertTrue(QS, "Run inside nix develop")
+        if not QS:
+            self.fail("Run inside nix develop")
+        quickshell = QS
         with tempfile.TemporaryDirectory(prefix="senntisten-bar-test-") as temp:
             base = Path(temp)
             source = base / "shell"
@@ -52,10 +54,16 @@ class BarIntegration(unittest.TestCase):
             })
             for key in ("DISPLAY", "WAYLAND_DISPLAY", "HYPRLAND_INSTANCE_SIGNATURE"):
                 env.pop(key, None)
-            proc = subprocess.run(
-                [QS, "--no-color", "--path", str(source / "BarTest.qml")],
-                env=env, capture_output=True, text=True, timeout=35,
-            )
+            try:
+                proc = subprocess.run(
+                    [quickshell, "--no-color", "--path", str(source / "BarTest.qml")],
+                    env=env, capture_output=True, text=True, timeout=35,
+                )
+            except subprocess.TimeoutExpired as error:
+                def as_text(value):
+                    return value.decode() if isinstance(value, bytes) else value or ""
+                output = as_text(error.stdout) + as_text(error.stderr)
+                self.fail("Bar QtTest timed out after 35 seconds:\n" + output)
             output = proc.stdout + proc.stderr
             self.assertEqual(proc.returncode, 0, output)
             match = re.search(r"SENNTISTEN_BAR_RESULT (\{.*\})", output)

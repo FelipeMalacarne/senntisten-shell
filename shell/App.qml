@@ -6,17 +6,22 @@ import "services"
 FloatingWindow {
     id: window
     property bool standalone: true
-    title: "Senntisten · Theme playground"
-    implicitWidth: 1080
-    implicitHeight: 820
-    minimumSize: Qt.size(620, 480)
+    title: standalone ? "Senntisten · Theme playground" : "Senntisten · Settings"
+    implicitWidth: standalone ? 1080 : 860
+    implicitHeight: standalone ? 820 : 650
+    minimumSize: standalone ? Qt.size(620, 480) : Qt.size(320, 360)
     color: Theme.colors.background
-    onClosed: if (standalone) Qt.quit()
+    onVisibleChanged: if (visible && !standalone)
+        Qt.callLater(picker.focusInitial)
+    onClosed: if (standalone)
+        Qt.quit()
     Shortcut {
         sequence: "Ctrl+Q"
         onActivated: {
-            if (window.standalone) Qt.quit();
-            else window.visible = false;
+            if (window.standalone)
+                Qt.quit();
+            else
+                window.visible = false;
         }
     }
 
@@ -31,11 +36,24 @@ FloatingWindow {
         }
     }
 
-    property alias view: canvas
-    Playground {
+    property alias view: canvas.item
+    property alias settingsView: picker
+    // Do not register playground-only shortcuts in the dedicated Settings window.
+    Loader {
         id: canvas
         anchors.fill: parent
+        active: window.standalone
+        sourceComponent: Playground {}
     }
+    ThemePicker {
+        id: picker
+        anchors.fill: parent
+        visible: !window.standalone
+        onCloseRequested: window.visible = false
+    }
+
+    Component.onCompleted: if (visible && !standalone)
+        Qt.callLater(picker.focusInitial)
 
     IpcHandler {
         target: "senntisten"
@@ -50,7 +68,7 @@ FloatingWindow {
                 width: window.width,
                 title: window.title,
                 theme: Theme.settings.theme,
-                background: canvas.color.toString(),
+                background: canvas.item.color.toString(),
                 saveStatus: Theme.saveStatus,
                 message: Theme.message,
                 writable: Theme.writable

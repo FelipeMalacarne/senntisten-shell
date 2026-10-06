@@ -9,6 +9,18 @@ PanelWindow {
     property bool previewMode: false
     signal launcherRequested
     signal appearanceRequested
+    signal dashboardRequested
+    signal settingsRequested
+    property alias dashboardOpen: audioPopup.visible
+
+    function openDashboard(restoreSettingsFocus) {
+        audioPopup.visible = true;
+        audioPanel.focusInitial(restoreSettingsFocus);
+    }
+
+    function closeDashboard() {
+        audioPopup.visible = false;
+    }
 
     anchors {
         top: !root.previewMode
@@ -16,7 +28,7 @@ PanelWindow {
         left: true
         right: true
     }
-    implicitHeight: 38
+    implicitHeight: Theme.metrics.barHeight
     exclusiveZone: root.previewMode ? 0 : implicitHeight
     exclusionMode: ExclusionMode.Normal
     WlrLayershell.namespace: "senntisten-bar"
@@ -41,7 +53,7 @@ PanelWindow {
             audioPopup.visible = false;
             root.appearanceRequested();
         }
-        onAudioRequested: audioPopup.visible = !audioPopup.visible
+        onAudioRequested: root.dashboardRequested()
     }
 
     // xdg_popup gives outside-click dismissal and keyboard focus without making
@@ -55,15 +67,16 @@ PanelWindow {
         anchor.gravity: root.previewMode ? Edges.Top | Edges.Left : Edges.Bottom | Edges.Left
         implicitWidth: Math.min(340, root.screen ? root.screen.width - 16 : 340)
         implicitHeight: audioPanel.implicitHeight
-        color: Theme.colors.surface
+        color: "transparent"
         onVisibleChanged: if (visible)
-            audioPanel.forceActiveFocus()
+            audioPanel.focusInitial(false)
         onClosed: visible = false
         AudioPanel {
             id: audioPanel
             anchors.fill: parent
             services: content.services
             onCloseRequested: audioPopup.visible = false
+            onSettingsRequested: root.settingsRequested()
         }
     }
 }

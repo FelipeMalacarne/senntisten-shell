@@ -32,6 +32,7 @@ if [[ $preview != 0 && $preview != 1 ]]; then
   exit 2
 fi
 export SENNTISTEN_MODE="$mode" SENNTISTEN_PREVIEW="$preview"
+export SENNTISTEN_DISTRO_ID="${SENNTISTEN_DISTRO_ID:-nixos}"
 
 quickshell="${SENNTISTEN_QUICKSHELL:-quickshell}"
 if ! command -v -- "$quickshell" >/dev/null 2>&1; then
@@ -81,5 +82,5 @@ fi
 export SENNTISTEN_STATE_DIR="$state_dir"
 
 export QT_QUICK_CONTROLS_STYLE=Basic
-# Foreground only: no session services, config installation, or state-file writes.
+# Foreground only: no service registration, provider activation, or config installation.
 exec "$quickshell" --path "$entry" --no-duplicate "$@"

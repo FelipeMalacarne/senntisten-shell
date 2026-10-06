@@ -3,9 +3,9 @@ import QtQuick.Controls
 import "../services"
 
 Pane {
-    padding: 22
+    padding: Theme.metrics.panelPadding
     background: Rectangle {
-        radius: 14
+        radius: Theme.metrics.panelRadius
         color: Theme.colors.surface
         border.color: Theme.colors.border
         Behavior on color {

@@ -11,69 +11,84 @@ Button {
     readonly property var previewColors: Catalog.paletteFor(themeId)
     readonly property bool selected: Theme.settings.theme === themeId
     implicitWidth: 250
-    implicitHeight: 116
-    padding: 13
+    implicitHeight: 64
+    padding: 10
     focusPolicy: Qt.StrongFocus
     Accessible.name: text
     Accessible.role: Accessible.RadioButton
     Accessible.checkable: true
     Accessible.checked: selected
     background: Rectangle {
-        color: control.hovered ? Theme.colors.elevated : Theme.colors.background
-        radius: 10
+        color: control.selected ? Theme.colors.elevated : control.hovered ? Theme.colors.overlay : "transparent"
+        radius: 7
         border.width: control.visualFocus ? 2 : 1
-        border.color: control.selected || control.visualFocus ? Theme.colors.accent : Theme.colors.border
+        border.color: control.visualFocus ? Theme.colors.accent : control.selected ? Theme.colors.border : "transparent"
         Behavior on color {
             ColorAnimation {
                 duration: Theme.animationDuration
             }
         }
     }
-    contentItem: ColumnLayout {
-        spacing: 8
-        RowLayout {
-            ShellLabel {
-                objectName: "themeOptionLabel"
+    contentItem: RowLayout {
+        spacing: 12
+        ColumnLayout {
+            Layout.fillWidth: true
+            spacing: 3
+            RowLayout {
                 Layout.fillWidth: true
-                text: control.text
-                font.pixelSize: 13
-                font.weight: Font.Medium
-            }
-            Rectangle {
-                width: 14
-                height: 14
-                radius: 7
-                color: control.selected ? Theme.colors.accent : "transparent"
-                border.color: control.selected ? Theme.colors.accent : Theme.colors.muted
-                Rectangle {
-                    visible: control.selected
-                    anchors.centerIn: parent
-                    width: 4
-                    height: 4
-                    radius: 2
-                    color: Theme.colors.accentText
+                ShellLabel {
+                    objectName: "themeOptionLabel"
+                    Layout.fillWidth: true
+                    text: control.text
+                    font.pixelSize: 13
+                    font.weight: Font.Medium
                 }
+                ShellLabel {
+                    visible: control.selected
+                    text: "ACTIVE"
+                    color: Theme.colors.accent
+                    font.pixelSize: 9
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 0.8
+                }
+            }
+            ShellLabel {
+                Layout.fillWidth: true
+                text: control.description
+                color: Theme.colors.muted
+                font.pixelSize: 10
+                elide: Text.ElideRight
+                wrapMode: Text.NoWrap
             }
         }
         RowLayout {
-            Layout.fillWidth: true
-            spacing: 4
+            spacing: 3
             Repeater {
                 model: ["background", "surface", "elevated", "muted", "accent"]
                 Rectangle {
                     required property string modelData
-                    Layout.fillWidth: true
-                    implicitHeight: 27
-                    radius: 4
+                    Layout.preferredWidth: 13
+                    Layout.preferredHeight: 13
+                    radius: 6.5
                     color: control.previewColors[modelData]
                     border.color: Theme.colors.border
                 }
             }
         }
-        ShellLabel {
-            text: control.description
-            color: Theme.colors.muted
-            font.pixelSize: 11
+        Rectangle {
+            Layout.preferredWidth: 14
+            Layout.preferredHeight: 14
+            radius: 7
+            color: control.selected ? Theme.colors.accent : "transparent"
+            border.color: control.selected ? Theme.colors.accent : Theme.colors.muted
+            Rectangle {
+                visible: control.selected
+                anchors.centerIn: parent
+                width: 4
+                height: 4
+                radius: 2
+                color: Theme.colors.accentText
+            }
         }
     }
 }

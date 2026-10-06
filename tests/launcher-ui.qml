@@ -28,7 +28,9 @@ ShellRoot {
             property string checkpoint: ""
             function cleanup() {
                 console.log("SENNTISTEN_LAUNCHER_CASE " + JSON.stringify({
-                    name: qtest_results.functionName, failed: qtest_results.failed, checkpoint: checkpoint,
+                    name: qtest_results.functionName,
+                    failed: qtest_results.failed,
+                    checkpoint: checkpoint,
                     index: launcher.item ? launcher.item.currentIndex : null,
                     focus: launcher.item ? findChild(launcher.item, "launcherSearch").activeFocus : false
                 }));
@@ -147,6 +149,9 @@ ShellRoot {
                 checkpoint = "row";
                 verify(list !== null);
                 tryVerify(() => list.itemAtIndex(0) !== null);
+                const scrollbar = findChild(launcher.item, "launcherScrollbar");
+                verify(scrollbar !== null);
+                compare(scrollbar.visible, false, "A single result must not draw a scrollbar");
                 const row = list.itemAtIndex(0);
                 compare(row.text, "Alpha Browser");
                 const icon = findChild(row, "launcherResultIcon");
@@ -191,7 +196,8 @@ ShellRoot {
                     compare(launcher.item.currentIndex, 7);
                     tryVerify(() => {
                         const row = list.itemAtIndex(7);
-                        if (!row) return false;
+                        if (!row)
+                            return false;
                         const point = row.mapToItem(list, 0, 0);
                         return point.y >= 0 && point.y + row.height <= list.height;
                     });
@@ -247,15 +253,23 @@ ShellRoot {
                     Theme.selectTheme(id);
                     tryCompare(Theme, "saveStatus", "saved");
                     checkpoint = id + " input colors";
+                    checkpoint = id + " field foreground";
                     compare(field.color.toString(), Theme.colors.text);
+                    checkpoint = id + " placeholder";
                     compare(field.placeholderTextColor.toString(), Theme.colors.muted);
+                    checkpoint = id + " selection";
                     compare(field.selectionColor.toString(), Theme.colors.accent);
+                    checkpoint = id + " selected text";
                     compare(field.selectedTextColor.toString(), Theme.colors.accentText);
+                    checkpoint = id + " field background";
                     compare(field.background.color.toString(), Theme.colors.background);
+                    checkpoint = id + " field focus";
                     compare(field.background.border.color.toString(), Theme.colors.accent);
+                    checkpoint = id + " panel";
                     tryCompare(panel.background, "color", Theme.colors.surface);
                     const row = findChild(launcher.item, "launcherResults").itemAtIndex(0);
-                    compare(row.background.border.color.toString(), Theme.colors.accent);
+                    checkpoint = id + " row selection";
+                    compare(row.background.border.color.toString(), Theme.colors.border);
                     compare(findChild(row, "launcherResultName").color.toString(), Theme.colors.text);
                     compare(findChild(row, "launcherResultGeneric").color.toString(), Theme.colors.muted);
                     waitForRendering(launcher.item);
@@ -264,9 +278,64 @@ ShellRoot {
                     compare(image.pixel(Math.floor(point.x), Math.floor(point.y)), Theme.colors.background);
                     compare(image.pixel(Math.floor(panel.x + panel.width / 2), Math.floor(panel.y + 4)), Theme.colors.surface);
                     compare(field.text, "Alpha", "Theme changes must preserve the current search");
+                    const output = Quickshell.env("SENNTISTEN_CAPTURE_DIR");
+                    if (output)
+                        image.save(output + "/launcher-" + id + ".png");
                 }
                 Theme.setReducedMotion(false);
                 tryCompare(Theme, "saveStatus", "saved");
+            }
+            function test_focus_and_selection_have_distinct_visual_states() {
+                typeQuery("Alpha");
+                const field = findChild(launcher.item, "launcherSearch");
+                const row = findChild(launcher.item, "launcherResults").itemAtIndex(0);
+                const marker = findChild(row, "launcherSelectionMarker");
+                verify(field !== null && row !== null && marker !== null);
+                field.forceActiveFocus();
+                compare(field.background.border.color.toString(), Theme.colors.accent);
+                verify(marker.visible, "The selected result needs a direct selection marker");
+                compare(row.background.border.color.toString(), Theme.colors.border);
+                verify(row.background.color.toString() !== field.background.color.toString());
+            }
+            function test_orbit_panel_gutters_columns_and_row_heights_are_shared() {
+                const panel = findChild(launcher.item, "launcherPanel");
+                const field = findChild(launcher.item, "launcherSearch");
+                const list = findChild(launcher.item, "launcherResults");
+                const searchIcon = findChild(launcher.item, "launcherSearchIcon");
+                const closeIcon = findChild(launcher.item, "launcherCloseIcon");
+                checkpoint = "Orbit surface geometry";
+                compare(panel.padding, 24);
+                compare(panel.background.radius, 21);
+                compare(field.height, 56);
+                compare(field.background.radius, 11);
+                compare(field.font.family, "DejaVu Sans");
+                verify(searchIcon !== null && closeIcon !== null);
+                compare(searchIcon.name, "search");
+                compare(closeIcon.name, "close");
+                for (const item of [field, list]) {
+                    const p = item.mapToItem(panel, 0, 0);
+                    compare(p.x, 24);
+                    compare(panel.width - p.x - item.width, 24);
+                }
+                for (let index = 0; index < launcher.item.resultCount; index++) {
+                    tryVerify(() => list.itemAtIndex(index) !== null);
+                    const row = list.itemAtIndex(index);
+                    const icon = findChild(row, "launcherResultIcon");
+                    const title = findChild(row, "launcherResultName");
+                    checkpoint = "Orbit result " + index;
+                    compare(row.height, 56);
+                    compare(row.background.radius, 11);
+                    checkpoint = "Orbit icon column " + index;
+                    compare(icon.mapToItem(panel, icon.width / 2, 0).x, searchIcon.mapToItem(panel, searchIcon.width / 2, 0).x);
+                    checkpoint = "Orbit text column " + index;
+                    compare(title.mapToItem(panel, 0, 0).x, field.mapToItem(panel, field.leftPadding, 0).x);
+                    verify(row.Accessible.name.includes(row.modelData.name));
+                    compare(row.Accessible.selected, row.selected);
+                    compare(title.font.family, "DejaVu Sans");
+                }
+                typeQuery("journal");
+                tryCompare(launcher.item, "resultCount", 1);
+                compare(list.itemAtIndex(0).height, 56, "Descriptions never change row height");
             }
             function test_z_catalog_removal_updates_empty_state_live() {
                 // QtTest orders functions by name: remove disposable fixtures last.
@@ -287,8 +356,7 @@ ShellRoot {
             }
             function test_real_desktop_entries_are_discovered_and_searched() {
                 tryVerify(() => DesktopEntries.applications.values.length === 13);
-                verify(DesktopEntries.applications.values.every(entry => entry.id.startsWith("senntisten-test-")),
-                    "Only temporary fixtures may be discovered; never use personal applications");
+                verify(DesktopEntries.applications.values.every(entry => entry.id.startsWith("senntisten-test-")), "Only temporary fixtures may be discovered; never use personal applications");
                 tryCompare(launcher.item, "resultCount", 8);
                 typeQuery("web");
                 tryCompare(launcher.item, "resultCount", 1);

@@ -1,5 +1,5 @@
 {
-  description = "Senntisten Shell — standalone personal Quickshell MVP";
+  description = "Senntisten Shell — personal Hyprland shell built with Quickshell";
 
   # Shared with nix-config; keep Quickshell and its Qt tooling on one pin.
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/9fbb54b33e91ee4ca368e35a78e0613c720600b3";
@@ -30,7 +30,7 @@
         default = {
           type = "app";
           program = nixpkgs.lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.default;
-          meta.description = "Launch Senntisten Shell as a normal window";
+          meta.description = "Launch the Senntisten desktop shell";
         };
       });
 
@@ -98,7 +98,33 @@
               cd source
               export HOME="$TMPDIR/home"
               mkdir -p "$HOME"
-              python3 tests/integration.py
+              python3 -m unittest discover -s tests -p '*integration.py' -v
+              touch "$out"
+            '';
+
+        package-smoke =
+          pkgs.runCommand "senntisten-shell-package-smoke"
+            {
+              SENNTISTEN_PACKAGE = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+              FONTCONFIG_FILE = pkgs.makeFontsConf {
+                fontDirectories = [ pkgs.dejavu_fonts ];
+                impureFontDirectories = [ ];
+                includes = [ ];
+              };
+              nativeBuildInputs = with pkgs; [
+                bash
+                coreutils
+                python3
+                quickshell
+              ];
+            }
+            ''
+              cp -R ${testSource} source
+              chmod -R u+w source
+              cd source
+              export HOME="$TMPDIR/home"
+              mkdir -p "$HOME"
+              python3 -W error::ResourceWarning tests/package_smoke.py
               touch "$out"
             '';
 

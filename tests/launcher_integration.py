@@ -77,7 +77,7 @@ class LauncherSandbox:
             "NO_COLOR": "1",
         })
         for name in ("WAYLAND_DISPLAY", "DISPLAY", "DBUS_SESSION_BUS_ADDRESS", "HYPRLAND_INSTANCE_SIGNATURE",
-                     "QS_CONFIG_PATH", "QS_CONFIG_NAME", "QS_MANIFEST", "SENNTISTEN_CAPTURE_DIR"):
+                     "QS_CONFIG_PATH", "QS_CONFIG_NAME", "QS_MANIFEST"):
             self.env.pop(name, None)
 
     def entry(self, identifier, name, generic="", keywords="", extra=""):
@@ -105,7 +105,7 @@ class LauncherIntegration(unittest.TestCase):
         # This wiring guard is explicitly not a compositor/layer-surface test.
         source = (ROOT / "shell/desktop/Launcher.qml").read_text()
         for declaration in (
-            "PanelWindow {", "property bool opened: false", "signal dismissed()",
+            "PanelWindow {", "property bool opened: false", "signal dismissed",
             "visible: opened", "exclusionMode: ExclusionMode.Ignore",
             'WlrLayershell.namespace: "senntisten-launcher"',
             "WlrLayershell.layer: WlrLayer.Overlay",

@@ -11,6 +11,18 @@ Singleton {
     property var settings: Catalog.decodeState("").settings
     readonly property var colors: Catalog.paletteFor(settings.theme)
     readonly property var presets: Catalog.listThemes()
+    readonly property var metrics: ({
+            barHeight: 44,
+            panelRadius: 21,
+            panelPadding: 24,
+            controlRadius: 11,
+            resultHeight: 56
+        })
+    readonly property var typography: ({
+            sans: "DejaVu Sans",
+            serif: "DejaVu Serif",
+            mono: "DejaVu Sans Mono"
+        })
     readonly property int animationDuration: settings.reducedMotion ? 0 : 140
     readonly property string name: presets.filter(entry => entry.id === settings.theme)[0].name
     readonly property string stateDirectory: Quickshell.env("SENNTISTEN_STATE_DIR") || ((Quickshell.env("XDG_STATE_HOME").startsWith("/") ? Quickshell.env("XDG_STATE_HOME") : Quickshell.env("HOME") + "/.local/state") + "/senntisten-shell")
