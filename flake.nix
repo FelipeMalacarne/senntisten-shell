@@ -22,6 +22,8 @@
       };
     in
     {
+      homeManagerModules.default = import ./nix/home-manager.nix { inherit self; };
+
       packages = forEachSystem (pkgs: {
         default = pkgs.callPackage ./nix/package.nix { };
       });
@@ -44,6 +46,7 @@
             qt6.qtdeclarative.dev
             bash
             coreutils
+            jq
             shellcheck
             nixfmt
           ];
@@ -55,6 +58,22 @@
       checks = forEachSystem (pkgs: {
         package = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
+        home-manager =
+          let
+            results = import ./nix/tests/home-manager.nix {
+              inherit (pkgs) lib;
+              inherit pkgs;
+              module = self.homeManagerModules.default;
+              defaultPackage = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+            };
+          in
+          if results.failures == [ ] then
+            pkgs.runCommand "senntisten-shell-home-manager-tests" { } ''
+              cp ${pkgs.writeText "home-manager-test-report.json" (builtins.toJSON results.names)} "$out"
+            ''
+          else
+            throw "Home Manager module tests failed: ${builtins.toJSON results.failures}";
+
         unit-tests =
           pkgs.runCommand "senntisten-shell-unit-tests"
             {
@@ -62,6 +81,7 @@
                 bash
                 coreutils
                 nodejs
+                jq
               ];
             }
             ''
@@ -88,6 +108,7 @@
                 coreutils
                 python3
                 quickshell
+                jq
               ];
             }
             ''
@@ -116,6 +137,7 @@
                 coreutils
                 python3
                 quickshell
+                jq
               ];
             }
             ''
@@ -141,7 +163,7 @@
             ''
               bash -n ${./bin/senntisten-shell}
               shellcheck ${./bin/senntisten-shell}
-              nixfmt --check ${./flake.nix} ${./nix/package.nix}
+              nixfmt --check ${./flake.nix} ${./nix/package.nix} ${./nix/home-manager.nix} ${./nix/tests/home-manager.nix}
               touch "$out"
             '';
       });

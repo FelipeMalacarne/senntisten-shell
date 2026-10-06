@@ -40,7 +40,7 @@ ShellRoot {
         }
         function theme(id: string): bool { return Theme.selectTheme(id); }
         function motion(value: bool): bool { return Theme.setReducedMotion(value); }
-        function closeSettings(): void { app.visible = false; app.closed(); }
+        function closeSettings(): void { app.contentItem.Window.window.close(); }
         function showSettings(): void { app.visible = true; }
         function narrow(): void {
             app.contentItem.Window.window.width = 320;

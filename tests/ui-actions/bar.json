@@ -4,6 +4,13 @@
   {"op": "click", "target": "workspace-2"},
   {"op": "click", "target": "barAudio"},
   {"op": "click", "target": "barAppearance"},
+  {"op": "hover", "target": "barClock"},
+  {"op": "expect", "target": "barAppearance", "property": "activeFocus", "value": true},
+  {"op": "expect", "target": "barAppearance", "property": "hovered", "value": false},
+  {"op": "expect", "target": "barAppearance", "property": "down", "value": false},
+  {"op": "expect", "target": "barAppearance", "property": "visualFocus", "value": false},
+  {"op": "key", "key": "Backtab"},
+  {"op": "expect", "target": "barAudio", "property": "visualFocus", "value": true},
   {"op": "resize", "width": 360, "height": 44},
   {"op": "wheel", "target": "barWorkspaceViewport", "dy": -120}
 ]

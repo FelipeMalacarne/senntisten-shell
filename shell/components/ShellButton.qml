@@ -32,7 +32,7 @@ Button {
     background: Rectangle {
         radius: Theme.metrics.controlRadius
         opacity: control.enabled ? 1 : 0.45
-        color: control.down ? Theme.colors.overlay : control.activeFocus && !control.selected ? Theme.colors.overlay : control.primary ? Theme.colors.accent : control.selected ? control.selectedBackground : control.quiet ? control.hovered ? Theme.colors.overlay : "transparent" : control.hovered ? Theme.colors.elevated : Theme.colors.surface
+        color: control.down ? Theme.colors.overlay : control.visualFocus && !control.selected ? Theme.colors.overlay : control.primary ? Theme.colors.accent : control.selected ? control.selectedBackground : control.quiet ? control.hovered ? Theme.colors.overlay : "transparent" : control.hovered ? Theme.colors.elevated : Theme.colors.surface
         border.color: control.borderless ? "transparent" : control.visualFocus ? Theme.colors.accent : control.quiet && control.quietSelection ? Theme.colors.border : control.quiet ? control.selected ? Theme.colors.accent : Theme.colors.border : control.selected ? Theme.colors.accent : Theme.colors.border
         border.width: control.borderless ? 0 : control.visualFocus ? 2 : 1
         Behavior on color {

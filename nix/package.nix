@@ -4,6 +4,7 @@
   writeShellApplication,
   bash,
   coreutils,
+  jq,
   quickshell,
   dejavu_fonts,
   makeFontsConf,
@@ -45,6 +46,7 @@ writeShellApplication {
     quickshell
     bash
     coreutils
+    jq
   ];
   text = ''
     export SENNTISTEN_QUICKSHELL="''${SENNTISTEN_QUICKSHELL:-${lib.getExe quickshell}}"

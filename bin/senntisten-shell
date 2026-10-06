@@ -3,36 +3,69 @@ set -euo pipefail
 
 mode="${SENNTISTEN_MODE-desktop}"
 preview="${SENNTISTEN_PREVIEW-0}"
+action=''
+target_pid=''
 case "${1-}" in
   --help|-h)
     printf '%s\n' \
       'Senntisten Shell' \
       'Usage: senntisten-shell [MODE] [quickshell options]' \
+      '       senntisten-shell launcher|dashboard|settings|session|lock [--pid PID]' \
       '  --desktop     Real bar and launcher (default)' \
       '  --preview     Bottom bar without reserved space; keeps the current shell' \
       '  --playground  Isolated appearance/component window' \
       '  --help        Show this help without starting or writing state' \
+      'Actions toggle existing surfaces; dashboard is Quick Controls, settings is appearance.' \
+      'Without --pid, only the current source/package identity is selected; ambiguity is an error.' \
+      '--pid explicitly selects an existing desktop/preview instance, including another build.' \
+      'session and lock are unconfigured until issue 007. Actions never start a shell.' \
       'Put the mode first. No startup services or desktop provider are changed.'
     exit 0 ;;
   --desktop) mode=desktop; preview=0; shift ;;
   --playground) mode=playground; preview=0; shift ;;
   --preview) mode=desktop; preview=1; shift ;;
-esac
-case "${1-}" in
-  --desktop|--playground|--preview)
-    printf 'senntisten-shell: choose only one leading mode option.\n' >&2
+  launcher|dashboard|settings|session|lock) action="$1"; shift ;;
+  --pid)
+    printf 'senntisten-shell: --pid must follow an action. Usage: senntisten-shell ACTION [--pid PID].\n' >&2
+    exit 2 ;;
+  ''|-*) ;;
+  *)
+    printf 'senntisten-shell: unsupported action: %s. Expected launcher, dashboard, settings, session, or lock.\n' "$1" >&2
     exit 2 ;;
 esac
-if [[ $mode != desktop && $mode != playground ]]; then
-  printf 'senntisten-shell: invalid mode: %s (expected desktop or playground).\n' "$mode" >&2
-  exit 2
+if [[ -n $action ]]; then
+  if [[ $# == 2 && $1 == --pid ]]; then
+    target_pid="$2"
+    if [[ ! $target_pid =~ ^[1-9][0-9]*$ || ${#target_pid} -gt 10 ]] || (( target_pid > 2147483647 )); then
+      printf 'senntisten-shell: invalid PID: %s. Use a decimal integer from 1 to 2147483647, without leading zeros.\n' "$target_pid" >&2
+      exit 2
+    fi
+  elif [[ $# != 0 ]]; then
+    printf 'senntisten-shell: invalid action arguments. Usage: senntisten-shell %s [--pid PID].\n' "$action" >&2
+    exit 2
+  fi
+  if [[ $action == session || $action == lock ]]; then
+    printf 'senntisten-shell: %s is unconfigured; issue 007 must configure a session/lock provider before this action is available.\n' "$action" >&2
+    exit 1
+  fi
 fi
-if [[ $preview != 0 && $preview != 1 ]]; then
-  printf 'senntisten-shell: invalid preview value: %s (expected 0 or 1).\n' "$preview" >&2
-  exit 2
+if [[ -z $action ]]; then
+  case "${1-}" in
+    --desktop|--playground|--preview)
+      printf 'senntisten-shell: choose only one leading mode option.\n' >&2
+      exit 2 ;;
+  esac
+  if [[ $mode != desktop && $mode != playground ]]; then
+    printf 'senntisten-shell: invalid mode: %s (expected desktop or playground).\n' "$mode" >&2
+    exit 2
+  fi
+  if [[ $preview != 0 && $preview != 1 ]]; then
+    printf 'senntisten-shell: invalid preview value: %s (expected 0 or 1).\n' "$preview" >&2
+    exit 2
+  fi
+  export SENNTISTEN_MODE="$mode" SENNTISTEN_PREVIEW="$preview"
+  export SENNTISTEN_DISTRO_ID="${SENNTISTEN_DISTRO_ID:-nixos}"
 fi
-export SENNTISTEN_MODE="$mode" SENNTISTEN_PREVIEW="$preview"
-export SENNTISTEN_DISTRO_ID="${SENNTISTEN_DISTRO_ID:-nixos}"
 
 quickshell="${SENNTISTEN_QUICKSHELL:-quickshell}"
 if ! command -v -- "$quickshell" >/dev/null 2>&1; then
@@ -40,21 +73,103 @@ if ! command -v -- "$quickshell" >/dev/null 2>&1; then
   exit 127
 fi
 
-source_dir="${SENNTISTEN_SOURCE_DIR:-$(dirname -- "${BASH_SOURCE[0]}")/../shell}"
-if ! source_dir="$(CDPATH='' cd -- "$source_dir" && pwd -P)"; then
-  printf 'senntisten-shell: cannot read source directory; check SENNTISTEN_SOURCE_DIR.\n' >&2
-  exit 1
+if [[ -z $target_pid ]]; then
+  source_dir="${SENNTISTEN_SOURCE_DIR:-$(dirname -- "${BASH_SOURCE[0]}")/../shell}"
+  if ! source_dir="$(CDPATH='' cd -- "$source_dir" && pwd -P)"; then
+    printf 'senntisten-shell: cannot read source directory; check SENNTISTEN_SOURCE_DIR.\n' >&2
+    exit 1
+  fi
+  entry="$source_dir"
+  entry_file="$source_dir/shell.qml"
+  if [[ -z $action && $mode == playground ]]; then
+    entry="$source_dir/PlaygroundRoot.qml"
+    entry_file="$entry"
+  fi
+  if [[ ! -f "$entry_file" || ! -r "$entry_file" ]]; then
+    printf 'senntisten-shell: readable %s not found in %s\n' "${entry_file##*/}" "$source_dir" >&2
+    exit 1
+  fi
 fi
-entry="$source_dir"
-entry_file="$source_dir/shell.qml"
-if [[ $mode == playground ]]; then
-  entry="$source_dir/PlaygroundRoot.qml"
-  entry_file="$entry"
+
+if [[ -n $action ]]; then
+  if ! command -v jq >/dev/null 2>&1; then
+    printf 'senntisten-shell: jq is required for safe instance/status JSON parsing. Use the packaged command or a development environment with jq.\n' >&2
+    exit 127
+  fi
+  if [[ -z $target_pid ]]; then
+    entry_file="$(readlink -f -- "$entry_file")"
+  else
+    entry_file=''
+  fi
+  # Discover first, then always call by PID: path IPC silently chooses one instance.
+  unset QS_CONFIG_PATH QS_CONFIG_NAME QS_MANIFEST
+  if ! instances="$("$quickshell" list --all --json)"; then
+    printf 'senntisten-shell: cannot discover running instances. Check quickshell list --all --json and XDG_RUNTIME_DIR.\n' >&2
+    exit 1
+  fi
+  # Pinned Quickshell prints this exact non-JSON sentinel even with --json.
+  if [[ $instances == 'No running instances.' ]]; then
+    instances='[]'
+  fi
+  if ! selected="$(jq -ser --arg entry "$entry_file" --arg pid "$target_pid" '
+    def valid_instance:
+      type == "object"
+      and (.pid | type == "number" and floor == . and . > 0 and . <= 2147483647)
+      and (.config_path | type == "string" and length > 0);
+    if length != 1 or (.[0] | type) != "array" or (.[0] | all(valid_instance) | not)
+    then error("invalid instance list")
+    else .[0] | map(select(if $pid == "" then .config_path == $entry else .pid == ($pid | tonumber) end))
+      | if length == 0 then "missing"
+        elif length > 1 then "ambiguous"
+        else .[0].pid | tostring end
+    end
+  ' <<< "$instances" 2>/dev/null)"; then
+    printf 'senntisten-shell: invalid instance discovery JSON; refusing to select an instance. Check quickshell list --all --json.\n' >&2
+    exit 1
+  fi
+  case "$selected" in
+    missing)
+      if [[ -n $target_pid ]]; then
+        printf 'senntisten-shell: PID %s is not a running Quickshell instance in this runtime. Check quickshell list --all --json.\n' "$target_pid" >&2
+      else
+        printf 'senntisten-shell: no running instance for %s. Start this source/package with --desktop or --preview, or explicitly select another desktop instance with --pid PID.\n' "$entry_file" >&2
+      fi
+      exit 1 ;;
+    ambiguous)
+      printf 'senntisten-shell: ambiguous selection: multiple running instances match. Check quickshell list --all --json and supply --pid PID.\n' >&2
+      exit 1 ;;
+  esac
+  if ! status_reply="$("$quickshell" ipc --pid "$selected" call senntisten status)"; then
+    printf 'senntisten-shell: cannot read the Senntisten desktop controller status for PID %s. It may be foreign, wrong-mode, or stopped; select a running desktop/preview instance.\n' "$selected" >&2
+    exit 1
+  fi
+  # Validate the existing status contract, including for explicitly selected older builds.
+  if ! screen_count="$(jq -ser '
+    if length == 1 and (.[0] |
+      type == "object" and .mode == "desktop" and .ready == true
+      and ([.preview, .writable, .launcherOpen, .dashboardOpen, .appearanceOpen] | all(type == "boolean"))
+      and ([.theme, .saveStatus, .message, .targetScreen] | all(type == "string"))
+      and (.screenCount | type == "number" and floor == . and . >= 0))
+    then .[0].screenCount else error("invalid desktop controller status") end
+  ' <<< "$status_reply" 2>/dev/null)"; then
+    printf 'senntisten-shell: PID %s did not return a ready Senntisten desktop controller status; refusing a foreign, wrong-mode, or incompatible instance. Use --desktop/--preview, not --playground.\n' "$selected" >&2
+    exit 1
+  fi
+  if [[ $screen_count == 0 ]]; then
+    printf 'senntisten-shell: PID %s has no available screens; connect a screen before requesting %s.\n' "$selected" "$action" >&2
+    exit 1
+  fi
+  if ! reply="$("$quickshell" ipc --pid "$selected" call senntisten "$action")"; then
+    printf 'senntisten-shell: IPC dispatch of %s to PID %s failed; check that the instance is still running and supports this action.\n' "$action" "$selected" >&2
+    exit 1
+  fi
+  if [[ $reply != true ]]; then
+    printf 'senntisten-shell: %s was rejected or returned an unexpected IPC reply from PID %s (expected true): %s. Check available screens and controller compatibility.\n' "$action" "$selected" "$reply" >&2
+    exit 1
+  fi
+  exit 0
 fi
-if [[ ! -f "$entry_file" || ! -r "$entry_file" ]]; then
-  printf 'senntisten-shell: readable %s not found in %s\n' "${entry_file##*/}" "$source_dir" >&2
-  exit 1
-fi
+
 umask 077
 if [[ ${SENNTISTEN_STATE_DIR+x} ]]; then
   state_dir="$SENNTISTEN_STATE_DIR"

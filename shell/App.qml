@@ -13,8 +13,12 @@ FloatingWindow {
     color: Theme.colors.background
     onVisibleChanged: if (visible && !standalone)
         Qt.callLater(picker.focusInitial)
-    onClosed: if (standalone)
-        Qt.quit()
+    onClosed: {
+        if (standalone)
+            Qt.quit();
+        else
+            visible = false;
+    }
     Shortcut {
         sequence: "Ctrl+Q"
         onActivated: {

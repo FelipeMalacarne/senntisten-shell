@@ -102,7 +102,7 @@ Item {
                 }
                 background: Rectangle {
                     radius: Theme.metrics.controlRadius
-                    color: parent.down || parent.hovered || parent.activeFocus ? Theme.colors.overlay : Qt.rgba(0, 0, 0, 0)
+                    color: parent.down || parent.hovered || parent.visualFocus ? Theme.colors.overlay : Qt.rgba(0, 0, 0, 0)
                 }
                 BarTooltip {
                     objectName: "barLauncherTooltip"
@@ -178,7 +178,7 @@ Item {
                             }
                             background: Rectangle {
                                 radius: Theme.metrics.controlRadius
-                                color: workspaceButton.down || workspaceButton.hovered || workspaceButton.activeFocus ? Theme.colors.overlay : Qt.rgba(0, 0, 0, 0)
+                                color: workspaceButton.down || workspaceButton.hovered || workspaceButton.visualFocus ? Theme.colors.overlay : Qt.rgba(0, 0, 0, 0)
                             }
                             BarTooltip {
                                 targetItem: workspaceButton
@@ -321,7 +321,7 @@ Item {
                 }
                 background: Rectangle {
                     radius: Theme.metrics.controlRadius
-                    color: audioButton.selected || audioButton.down || audioButton.hovered || audioButton.activeFocus ? Theme.colors.overlay : Qt.rgba(0, 0, 0, 0)
+                    color: audioButton.selected || audioButton.down || audioButton.hovered || audioButton.visualFocus ? Theme.colors.overlay : Qt.rgba(0, 0, 0, 0)
                 }
                 BarTooltip {
                     objectName: "barAudioTooltip"
@@ -354,7 +354,7 @@ Item {
                 }
                 background: Rectangle {
                     radius: Theme.metrics.controlRadius
-                    color: parent.down || parent.hovered || parent.activeFocus ? Theme.colors.overlay : Qt.rgba(0, 0, 0, 0)
+                    color: parent.down || parent.hovered || parent.visualFocus ? Theme.colors.overlay : Qt.rgba(0, 0, 0, 0)
                 }
                 BarTooltip {
                     objectName: "barSettingsTooltip"

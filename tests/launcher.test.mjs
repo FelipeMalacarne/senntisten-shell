@@ -129,6 +129,15 @@ test("forwards arguments literally without shell evaluation", (t) => {
   assert.equal(existsSync(marker), false);
 });
 
+test("action names after launch modes or options remain literal Quickshell arguments", (t) => {
+  const f = fixture(t);
+  for (const mode of ["--desktop", "--preview", "--playground", "--no-color"]) {
+    const arguments_ = ["launcher", "dashboard", "settings", "session", "lock", "--pid", "123"];
+    const result = launched(f.run([mode, ...arguments_]));
+    assert.deepEqual(result.args.slice(3), mode === "--no-color" ? [mode, ...arguments_] : arguments_);
+  }
+});
+
 test("uses an explicit source directory with spaces", (t) => {
   const f = fixture(t);
   const source = path.join(f.root, "packaged source");

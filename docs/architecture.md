@@ -29,8 +29,10 @@ shell/components/            shared presentation components
 shell/services/Theme.qml     theme state, asynchronous persistence, transactions
 shell/lib/ThemeCatalog.js    pure presets and versioned state codec
 shell/lib/ApplicationSearch.js pure deterministic desktop-entry ranking
-bin/senntisten-shell         safe source/package launch wrapper
+bin/senntisten-shell         foreground launch and existing-instance action dispatch
 nix/package.nix             package with pinned runtime paths
+nix/home-manager.nix        opt-in installation and nullable command hooks
+nix/tests/                  repository-local module evaluation fixtures
 flake.nix                   package, dev environment, and checks
 ```
 
@@ -109,40 +111,48 @@ download or unverified distro detection.
 Raw desktop IPC exposes `launcher`, `dashboard`, and `settings` toggles. They
 return false if no target is available. `dashboard` routes to the correct bar's
 Quick Controls; opening a launcher or Settings closes Quick Controls. This is
-not yet the stable packaged five-hook dispatcher described below.
+the controller used by the stable packaged dispatcher described below. Raw IPC
+remains available for local diagnostics, but callers integrating bindings should
+use the wrapper's validation and failure handling.
 
-### Planned Nix command contract
+### Nix command contract
 
-The eventual provider integration must support at least the user's
-`my.desktop.shellCommands` hooks. Each option has type
-`lib.types.nullOr lib.types.str` and defaults to `null`:
+The packaged action interface is `senntisten-shell ACTION [--pid PID]`.
+Launcher, dashboard, and Settings toggle their existing surfaces. Default
+selection requires a unique running instance of the current configuration;
+explicit PID selection supports previews, source checkouts, and different package
+builds without starting another shell. Missing or rejected requests fail nonzero.
+See [Shell Commands](shell-commands.md) for semantics and limitations.
 
-| Hook | Required purpose |
-| --- | --- |
-| `launcher` | Invoke the application launcher. |
-| `dashboard` | Invoke Quick Controls and desktop status, separate from Settings. |
-| `settings` | Open the dedicated Settings window. |
-| `session` | Open a session/power menu, not immediately perform a destructive action. |
-| `lock` | Request a real secure lock through the explicitly selected lock provider. |
+The opt-in Home Manager module exposes `programs.senntisten-shell.shellCommands`
+for bridging to the user's external `my.desktop.shellCommands` contract. Each hook
+has type `lib.types.nullOr lib.types.str` and defaults to `null`:
+
+| Hook | Purpose | Availability |
+| --- | --- | --- |
+| `launcher` | Toggle the application launcher. | Explicit command exposure |
+| `dashboard` | Toggle Quick Controls, separate from Settings. | Explicit command exposure |
+| `settings` | Toggle the dedicated Settings window. | Explicit command exposure |
+| `session` | Open a session/power menu, not perform a destructive action directly. | Unconfigured |
+| `lock` | Request a secure lock through an explicitly selected trusted provider. | Unconfigured |
 
 `null` means unavailable or unconfigured, not a successful no-op. Additional hooks
-may be added, but do not replace these five. The exact command syntax and
-show/toggle behavior remain to be defined and documented before implementation.
+may be added, but do not replace these five. Package installation and command
+exposure are separate opt-ins; neither enables startup or bindings. An external
+consumer chooses whether to map these values into its own provider options.
 
-Commands must have a stable packaged interface, target the intended running
-instance through IPC, and report missing instances or unsupported actions with
-an actionable error and nonzero exit status. Opening a surface must not start a
-second shell. Nix/compositor integration consumes these commands for bindings;
-the shell must not register global shortcuts implicitly.
+The dispatcher recognizes `session` and `lock`, but reports them as unconfigured.
+Their functional implementation is [issue 007](issues/007-session-lock.md). The
+shell never registers global shortcuts implicitly.
 
 The lock hook may delegate to an existing trusted provider. It does not require
 Senntisten to own session locking, and a cosmetic overlay cannot satisfy it.
 Session actions must respect the established lock-before-suspend policy.
 
-This contract is planned work. Defining it here does not implement the hooks,
-enable autostart, edit the separate Nix configuration, or approve replacing any
-active provider. Command dispatch, failure behavior, instance targeting, session
-safety, and any lock delegation need isolated behavioral tests before activation.
+Exporting the module does not edit the separate Nix configuration or approve
+replacing any active provider. Native acceptance, external integration, and
+activation remain separate gates. Session safety and any lock delegation require
+isolated behavioral tests and explicit provider selection before live use.
 
 ### Persistence
 
@@ -218,11 +228,11 @@ passive Quickshell popups with an empty input mask and no focus grab.
 
 ## Subsequent increments
 
-1. Export a typed Home Manager module, without enabling autostart by default.
-2. Register an explicit `senntisten` provider and launcher keybinding in the
-   separate Nix configuration.
-3. Add notification, network/Bluetooth, brightness, and lock capabilities as
-   individually tested ownership decisions rather than mandatory startup features.
+1. Close native pointer, focus, GPU, and multi-monitor acceptance gaps.
+2. After approval, integrate the exported module with an explicit `senntisten`
+   provider and launcher keybinding in the separate Nix configuration.
+3. Add network/Bluetooth, appearance, media, and session capabilities from the
+   [implementation backlog](issues/README.md), without bundling provider ownership.
 4. Extend Theme Studio and add capture, project, and machine tools as independently
    usable windows with the same components and theme service.
 

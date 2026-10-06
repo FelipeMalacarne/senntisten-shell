@@ -220,7 +220,7 @@ ShellRoot {
                     visibleGeometry: visible,
                     inViewport: item.visible && visible.width > 0 && visible.height > 0 && visible.width >= box.width - 0.5 && visible.height >= box.height - 0.5
                 };
-                for (const property of ["text", "selected", "checked", "value", "hovered", "down", "contentX", "contentY", "contentWidth", "contentHeight", "currentIndex"])
+                for (const property of ["text", "selected", "checked", "value", "hovered", "down", "visualFocus", "contentX", "contentY", "contentWidth", "contentHeight", "currentIndex"])
                     if (property in item)
                         result[property] = item[property];
                 return result;

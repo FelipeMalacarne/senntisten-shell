@@ -3,9 +3,10 @@
 NIX ?= nix
 NIX_FLAGS ?= --no-write-lock-file
 DEV := $(NIX) develop $(NIX_FLAGS) --command
+NIX_SOURCES := flake.nix $(wildcard nix/*.nix nix/tests/*.nix)
 
 .PHONY: help run-preview run-desktop playground develop fmt fmt-check lint \
-	test-unit test-integration test ui-check ui-inspect test-package-smoke package-smoke build check ci clean
+	test-unit test-integration test-module test ui-check ui-inspect test-package-smoke package-smoke build check ci clean
 
 help:
 	@printf '%s\n' \
@@ -19,7 +20,8 @@ help:
 		'  make lint               Run ShellCheck and qmllint' \
 		'  make test-unit          Run Node unit tests' \
 		'  make test-integration   Run real offscreen Quickshell integration tests' \
-		'  make test               Run unit and integration tests' \
+		'  make test-module        Evaluate the opt-in Home Manager module fixtures' \
+		'  make test               Run unit, integration, and module tests' \
 		'  make ui-check           Run UI regressions and collect fresh screenshots/logs' \
 		'  make ui-inspect         Inspect real QML; UI_ARGS="--scene settings --actions ..."' \
 		'  make test-package-smoke Build the package and test its launcher/duplicate guard' \
@@ -41,11 +43,11 @@ develop:
 	$(NIX) develop $(NIX_FLAGS)
 
 fmt:
-	$(DEV) nixfmt flake.nix nix/package.nix
+	$(DEV) nixfmt $(NIX_SOURCES)
 	$(DEV) bash -c 'for file in shell/*.qml shell/components/*.qml shell/desktop/*.qml shell/services/*.qml tests/*.qml; do test -f "$$file" && qmlformat -i "$$file"; done'
 
 fmt-check:
-	$(DEV) nixfmt --check flake.nix nix/package.nix
+	$(DEV) nixfmt --check $(NIX_SOURCES)
 	$(DEV) bash -c 'set -e; tmp=$$(mktemp); trap "rm -f $$tmp" EXIT; for file in shell/*.qml shell/components/*.qml shell/desktop/*.qml shell/services/*.qml tests/*.qml; do if test -f "$$file"; then qmlformat "$$file" > "$$tmp"; diff -u "$$file" "$$tmp"; fi; done'
 	git diff --check
 
@@ -60,7 +62,10 @@ test-unit:
 test-integration:
 	$(DEV) python3 -m unittest discover -s tests -p '*integration.py' -v
 
-test: test-unit test-integration
+test-module:
+	$(NIX) build $(NIX_FLAGS) --no-link --print-out-paths --print-build-logs "path:.#checks.$(shell $(NIX) eval --impure --raw --expr builtins.currentSystem).home-manager"
+
+test: test-unit test-integration test-module
 
 ui-check:
 	$(DEV) python3 tests/ui_check.py $(UI_ARGS)

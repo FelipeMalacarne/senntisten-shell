@@ -4,18 +4,15 @@ import unittest
 from integration import ROOT, RunningShell
 
 
-class DesktopIntegration(unittest.TestCase):
-    def launch(self, preview=False):
-        self.assertTrue((ROOT / "shell/Desktop.qml").is_file(), "A real desktop composition root is required")
-        shell = RunningShell()
-        self.addCleanup(shell.close)
-        shell.entry = shell.source / "shell.qml"
-        shell.env["SENNTISTEN_PREVIEW"] = "1" if preview else "0"
-        surface_dir = shell.source / "desktop"
-        surface_dir.mkdir(exist_ok=True)
-        # No compositor mutations here. Bar/launcher content have separate real UI tests;
-        # this fixture isolates desktop wiring, IPC, and the genuine appearance service.
-        (surface_dir / "Bar.qml").write_text('''import Quickshell
+def prepare_desktop(shell, preview=False):
+    """Keep the production controller and Settings; replace only layer surfaces."""
+    shell.entry = shell.source / "shell.qml"
+    shell.env["SENNTISTEN_PREVIEW"] = "1" if preview else "0"
+    surface_dir = shell.source / "desktop"
+    surface_dir.mkdir(exist_ok=True)
+    # No compositor mutations here. Bar/launcher content have separate real UI tests;
+    # this fixture isolates desktop wiring, IPC, and the genuine appearance service.
+    (surface_dir / "Bar.qml").write_text('''import Quickshell
 import Quickshell.Io
 Scope {
     id: bar
@@ -41,7 +38,7 @@ Scope {
     }
 }
 ''')
-        (surface_dir / "Launcher.qml").write_text('''import Quickshell
+    (surface_dir / "Launcher.qml").write_text('''import Quickshell
 Scope {
     property var screen
     property bool opened: false
@@ -49,6 +46,14 @@ Scope {
     function resetSearch() {}
 }
 ''')
+
+
+class DesktopIntegration(unittest.TestCase):
+    def launch(self, preview=False):
+        self.assertTrue((ROOT / "shell/Desktop.qml").is_file(), "A real desktop composition root is required")
+        shell = RunningShell()
+        self.addCleanup(shell.close)
+        prepare_desktop(shell, preview)
         shell.start()
         return shell
 

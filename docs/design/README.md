@@ -66,9 +66,10 @@ default, with a neutral icon for other distribution IDs.
 
 The future Nix integration requires at least `launcher`, `dashboard`, `settings`,
 `session`, and `lock` command hooks. See the
-[planned command contract](../architecture.md#planned-nix-command-contract) for
+[command contract](../architecture.md#nix-command-contract) for
 their purposes, nullable option semantics, instance targeting, and ownership
-boundaries. These hooks are requirements, not newly implemented commands.
+boundaries. Packaged dispatch implements the first three actions; session and
+lock remain unconfigured. The browser studies do not implement these commands.
 
 ## Verification
 

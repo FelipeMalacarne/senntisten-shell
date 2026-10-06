@@ -103,6 +103,42 @@ ShellRoot {
                 keyClick(Qt.Key_Escape);
                 compare(closeSpy.count, 1);
             }
+            function test_mouse_focus_does_not_look_pressed_and_tab_focus_remains_visible() {
+                for (const theme of ["catppuccin-mocha", "gruvbox"]) {
+                    verify(Theme.selectTheme(theme));
+                    tryCompare(Theme, "saveStatus", "saved");
+                    for (const name of ["audioDecrease", "audioIncrease", "quickSettings"]) {
+                        checkpoint = "pointer " + theme + " " + name;
+                        const button = findChild(panel, name);
+                        mouseClick(button);
+                        mouseMove(window.contentItem, 5, 5);
+                        tryCompare(button, "hovered", false);
+                        compare(button.down, false);
+                        verify(button.activeFocus && !button.visualFocus);
+                        wait(Theme.animationDuration + 30);
+                        checkpoint += " idle background";
+                        if (button.quiet)
+                            tryVerify(() => button.background.color.a === 0);
+                        else
+                            tryCompare(button.background, "color", Theme.colors.surface);
+                    }
+                    const mute = findChild(panel, "audioMute");
+                    mouseClick(mute);
+                    mouseMove(window.contentItem, 5, 5);
+                    verify(mute.selected);
+                    tryCompare(mute.background, "color", Theme.colors.accent);
+                    services.muted = false;
+                    panel.focusInitial(false);
+                    for (const name of ["audioDecrease", "audioMute", "audioIncrease", "quickSettings"]) {
+                        checkpoint = "Tab " + theme + " " + name;
+                        keyClick(Qt.Key_Tab);
+                        const button = findChild(panel, name);
+                        tryCompare(button, "activeFocus", true);
+                        verify(button.visualFocus);
+                        tryCompare(button.background, "color", Theme.colors.overlay);
+                    }
+                }
+            }
             function test_audio_remains_live_and_unavailable_state_is_honest() {
                 const slider = findChild(panel, "audioVolume");
                 slider.forceActiveFocus();

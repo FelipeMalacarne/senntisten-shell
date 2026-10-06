@@ -119,6 +119,7 @@ ShellRoot {
                 barLoader.item.services.tray = tray;
                 barLoader.item.screenName = "DP-1";
                 barLoader.item.popAbove = false;
+                barLoader.item.audioOpen = false;
                 tray.items.values = [];
                 tray.activations = 0;
                 tray.secondaryActivations = 0;
@@ -538,7 +539,7 @@ ShellRoot {
                 if (output)
                     grabImage(bar).save(output + "/bar-populated-default.png");
                 checkpoint = "focus request";
-                inactive.forceActiveFocus();
+                inactive.forceActiveFocus(Qt.TabFocusReason);
                 checkpoint = "focus ownership";
                 verify(inactive.activeFocus);
                 checkpoint = "focused inactive surface";
@@ -620,6 +621,66 @@ ShellRoot {
                 compare(appearanceSpy.count, 1);
                 verify(launcher.Accessible.name.length > 0);
                 verify(appearance.Accessible.name.length > 0);
+            }
+            function test_pointer_focus_does_not_latch_highlight_but_tab_focus_does() {
+                const bar = barLoader.item;
+                compositor.workspaces.values = [workspace(1, "DP-1", true), workspace(2, "DP-1", false)];
+                tryCompare(bar, "workspaceCount", 2);
+                const clock = findChild(bar, "barClock");
+                const output = Quickshell.env("SENNTISTEN_CAPTURE_DIR");
+                for (const theme of ["catppuccin-mocha", "gruvbox"]) {
+                    verify(Theme.selectTheme(theme));
+                    tryCompare(Theme, "saveStatus", "saved");
+                    for (const width of [1100, 360]) {
+                        barLoader.width = width;
+                        waitForRendering(bar);
+                        for (const name of ["barLauncher", "workspace-1", "workspace-2", "barAudio", "barAppearance"]) {
+                            const context = theme + " " + width + " " + name;
+                            checkpoint = "press " + context;
+                            const button = findChild(bar, name);
+                            mousePress(button);
+                            compare(button.down, true);
+                            tryCompare(button.background, "color", Theme.colors.overlay);
+                            mouseRelease(button);
+                            compare(button.down, false);
+                            checkpoint = "mouse focus " + context;
+                            verify(button.activeFocus);
+                            checkpoint = "mouse visual focus " + context;
+                            verify(!button.visualFocus);
+                            mouseMove(clock, clock.width / 2, clock.height / 2);
+                            checkpoint = "pointer leave " + context;
+                            tryCompare(button, "hovered", false);
+                            checkpoint = "idle background " + context;
+                            tryVerify(() => button.background.color.a === 0, 1000, "Mouse focus must not keep " + name + " highlighted");
+                            const point = button.mapToItem(bar, 2, button.height / 2);
+                            checkpoint = "idle pixels " + context;
+                            compare(grabImage(bar).pixel(Math.round(point.x), Math.round(point.y)), Theme.colors.surface);
+                        }
+                        verify(findChild(findChild(bar, "workspace-1"), "workspaceActiveMarker").visible);
+                        bar.audioOpen = true;
+                        tryCompare(findChild(bar, "barAudio").background, "color", Theme.colors.overlay);
+                        bar.audioOpen = false;
+                        tryVerify(() => findChild(bar, "barAudio").background.color.a === 0);
+                        if (output)
+                            grabImage(bar).save(output + "/bar-pointer-" + theme + "-" + width + ".png");
+
+                        mouseClick(findChild(bar, "barLauncher"));
+                        mouseMove(clock, clock.width / 2, clock.height / 2);
+                        for (const name of ["workspace-1", "workspace-2", "barAudio", "barAppearance"]) {
+                            checkpoint = "Tab " + theme + " " + width + " " + name;
+                            keyClick(Qt.Key_Tab);
+                            const button = findChild(bar, name);
+                            tryCompare(button, "activeFocus", true);
+                            verify(button.visualFocus);
+                            tryCompare(button.background, "color", Theme.colors.overlay);
+                        }
+                        const before = appearanceSpy.count;
+                        keyClick(Qt.Key_Space);
+                        compare(appearanceSpy.count, before + 1);
+                        if (output)
+                            grabImage(bar).save(output + "/bar-keyboard-" + theme + "-" + width + ".png");
+                    }
+                }
             }
             function test_orbit_tray_has_quiet_icons_and_a_separate_status_group() {
                 const bar = barLoader.item;

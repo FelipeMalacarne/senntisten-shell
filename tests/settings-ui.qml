@@ -298,6 +298,22 @@ ShellRoot {
                 tryCompare(item("theme-catppuccin-mocha"), "activeFocus", true);
             }
 
+            function test_native_close_can_reopen_repeatedly_with_palette_focus() {
+                for (const id of ["catppuccin-mocha", "gruvbox"]) {
+                    verify(Theme.selectTheme(id));
+                    tryCompare(Theme, "saveStatus", "saved");
+                    for (let cycle = 0; cycle < 3; cycle++) {
+                        checkpoint = "native close " + id + " " + cycle;
+                        verify(app.contentItem.Window.window.close());
+                        tryCompare(app, "visible", false);
+                        checkpoint = "reopen " + id + " " + cycle;
+                        app.visible = true;
+                        tryVerify(() => app.contentItem.Window.window.visible);
+                        tryCompare(item("theme-" + id), "activeFocus", true);
+                    }
+                }
+            }
+
             function test_close_button_and_escape_emit_without_quitting_the_host() {
                 settings();
                 mouseClick(item("themeClose"));

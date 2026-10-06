@@ -24,6 +24,9 @@ network/Bluetooth panels, brightness, global compositor keybindings, wallpaper
 adapters, and Home Manager startup are later increments. Senntisten does not stop
 Noctalia/Caelestia or alter Hyprland/session configuration by itself.
 
+An [opt-in Home Manager module](docs/home-manager.md) provides installation and
+nullable command hooks, without enabling startup or selecting a desktop provider.
+
 ## Design studies
 
 [Citadel and Orbit](docs/design/README.md) retain the interactive local browser
@@ -37,9 +40,13 @@ replace your current shell.
 During development, start with preview mode. It places the bar at the bottom
 without reserving workspace area, so the configured shell can remain active:
 
+These launch commands connect to a real display. Agent-driven previews or live
+review require explicit approval for that target display, or a supplied disposable
+compositor. Use the isolated [offscreen harness](docs/ui-harness.md) by default.
+
 ```sh
 cd /home/felipe/repos/senntisten-shell
-nix run . -- --preview
+SENNTISTEN_STATE_DIR="$PWD/.cache/dev-state" nix run . -- --preview
 ```
 
 Available modes:
@@ -50,14 +57,14 @@ Available modes:
 | `--desktop` (default) | Real top bar reserving 44 px; intended for replacement use |
 | `--playground` | Standalone theme/component development window |
 
-`--desktop` does not disable another bar; use preview until the Home Manager
-provider is implemented and explicitly selected.
+`--desktop` does not disable another bar; use preview until native acceptance is
+complete and the external desktop provider is explicitly integrated and selected.
 
 To edit the QML and see changes live:
 
 ```sh
 nix develop
-./bin/senntisten-shell --preview
+SENNTISTEN_STATE_DIR="$PWD/.cache/dev-state" ./bin/senntisten-shell --preview
 ```
 
 The development shell pins Quickshell and its Qt tooling together. No package
@@ -74,6 +81,22 @@ SENNTISTEN_STATE_DIR="$PWD/.cache/dev-state" ./bin/senntisten-shell --preview
 
 The default packaged app and a source checkout have different Quickshell
 configuration identities. Prefer isolated state when running them together.
+
+### Shell commands
+
+Request a surface from an already running instance without launching another shell:
+
+```sh
+senntisten-shell launcher
+senntisten-shell dashboard
+senntisten-shell settings
+```
+
+These actions toggle their respective surfaces. Default dispatch targets the
+current packaged configuration; use `--pid PID` to select a known preview, source
+checkout, or different package build. Missing, ambiguous, wrong-mode, or rejected
+requests fail nonzero without initializing appearance state. `session` and `lock`
+remain explicitly unconfigured. See the [command contract](docs/shell-commands.md).
 
 ## Controls
 
@@ -194,7 +217,8 @@ Individual checks inside `nix develop`:
 node --test tests/*.test.mjs
 python3 -m unittest discover -s tests -p '*integration.py' -v
 shellcheck bin/senntisten-shell
-nixfmt --check flake.nix nix/package.nix
+nixfmt --check flake.nix nix/*.nix nix/tests/*.nix
+make test-module
 ```
 
 The Node tests exercise both QML JavaScript libraries, process-boundary launching,
@@ -207,8 +231,10 @@ QML QtTest harnesses send mouse and keyboard events to the actual launcher, bar,
 audio, Settings, theme, and scrolling controls and sample rendered pixels. Orbit
 checks cover live palettes, consistent result rows and gutters, workspace hit
 targets, separate Settings routing, planned-service states, and narrow layouts.
-The built-package
-smoke check starts the packaged playground and verifies duplicate-instance behavior.
+The built-package smoke check starts the packaged playground, verifies duplicate
+protection, and exercises installed dispatch against isolated desktop controllers.
+Module fixtures verify the opt-in options and generated command hooks without
+activating Home Manager.
 Harnesses emit explicit pass/fail/skip counts because Quickshell is not
 `qmltestrunner`; the Python runners reject missing results or omitted cases.
 
@@ -226,8 +252,9 @@ SENNTISTEN_CAPTURE_DIR="$PWD/artifacts/screenshots" \
   python3 tests/launcher_integration.py LauncherIntegration.test_real_launcher_controls
 ```
 
-Artifacts are ignored by Git. With a real display this application can also be
-launched normally for visual review; none of the tests require replacing your shell.
+Artifacts are ignored by Git. Live visual review requires approval for the target
+display and isolated appearance state. Offscreen tests require neither a display
+nor replacement of your shell.
 
 ## Local diagnostics
 
@@ -246,14 +273,15 @@ quickshell ipc --path ./shell call senntisten quit
 focused monitor and return whether a target was available. `dashboard` is Quick
 Controls, not Settings. `status` reads desktop mode, screen count, target screen,
 overlay/window visibility (including `dashboardOpen`), theme, and save state.
-These are raw local Quickshell IPC calls, not a stable packaged command dispatcher
-or a network service. Use `--pid` instead of `--path` to target a specific instance.
+These are raw local Quickshell IPC calls, not a network service. Use the
+[packaged commands](docs/shell-commands.md) for integration and actionable failure
+handling. Raw IPC can use `--pid` instead of `--path` for a specific instance.
 
 ## Structure and next steps
 
 See [Architecture](docs/architecture.md) for boundaries and implementation notes.
 The [implementation backlog](docs/issues/README.md) tracks the next increments,
 their acceptance criteria, dependencies, and activation boundaries.
-The next increment is an opt-in Home Manager module and `senntisten` provider in
-`nix-config`, including the launcher keybinding. Notification/lock ownership remains
-a later decision rather than being bundled into activation.
+Native acceptance remains the gate before provider activation. Registering a
+`senntisten` provider or launcher keybinding in the external Nix configuration
+requires separate approval. Notification/lock ownership is not bundled into it.
