@@ -8,6 +8,7 @@ import "../services"
 Surface {
     id: root
     required property var services
+    property string connectivityPage: ""
     signal closeRequested
     signal settingsRequested
     padding: Theme.metrics.panelPadding
@@ -80,27 +81,34 @@ Surface {
                         model: [
                             {
                                 name: "quickNetwork",
+                                page: "network",
                                 title: "Network",
                                 icon: "wifi",
-                                description: "Wi-Fi controls"
+                                service: root.services.network
                             },
                             {
                                 name: "quickBluetooth",
+                                page: "bluetooth",
                                 title: "Bluetooth",
                                 icon: "bluetooth",
-                                description: "Device controls"
+                                service: root.services.bluetooth
                             }
                         ]
                         ShellButton {
                             required property var modelData
                             objectName: modelData.name
                             text: modelData.title
-                            enabled: false
+                            selected: root.connectivityPage === modelData.page
+                            selectedBackground: Theme.colors.elevated
+                            selectedForeground: Theme.colors.accent
                             Layout.fillWidth: true
                             Layout.preferredWidth: 1
                             Layout.minimumWidth: 0
                             implicitHeight: 76
-                            Accessible.name: modelData.title + ", Planned"
+                            Accessible.name: modelData.title + ", " + modelData.service.status + (modelData.service.error ? ", " + modelData.service.error : "")
+                            Accessible.checkable: true
+                            Accessible.checked: selected
+                            onClicked: root.connectivityPage = selected ? "" : modelData.page
                             contentItem: ColumnLayout {
                                 spacing: 6
                                 RowLayout {
@@ -114,11 +122,12 @@ Surface {
                                     Item {
                                         Layout.fillWidth: true
                                     }
-                                    ShellLabel {
-                                        text: "PLANNED"
-                                        font.family: Theme.typography.mono
-                                        font.pixelSize: 7
+                                    ShellIcon {
+                                        name: "arrow"
                                         color: Theme.colors.subtle
+                                        rotation: root.connectivityPage === modelData.page ? 90 : 0
+                                        Layout.preferredWidth: 12
+                                        Layout.preferredHeight: 12
                                     }
                                 }
                                 ShellLabel {
@@ -127,17 +136,32 @@ Surface {
                                     color: Theme.colors.muted
                                 }
                                 ShellLabel {
-                                    text: modelData.description
+                                    objectName: modelData.name + "Status"
+                                    text: modelData.service.error || modelData.service.status
                                     font.pixelSize: 9
-                                    color: Theme.colors.subtle
+                                    color: modelData.service.error ? Theme.colors.warning : Theme.colors.subtle
+                                    Layout.fillWidth: true
+                                    Layout.minimumWidth: 0
+                                    elide: Text.ElideRight
+                                    wrapMode: Text.NoWrap
                                 }
-                            }
-                            background: Rectangle {
-                                color: Theme.colors.elevated
-                                radius: Theme.metrics.controlRadius
                             }
                         }
                     }
+                }
+                NetworkControls {
+                    objectName: "quickNetworkDetails"
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                    visible: root.connectivityPage === "network"
+                    service: root.services.network
+                }
+                BluetoothControls {
+                    objectName: "quickBluetoothDetails"
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                    visible: root.connectivityPage === "bluetooth"
+                    service: root.services.bluetooth
                 }
                 ShellLabel {
                     objectName: "audioStatus"
@@ -235,6 +259,34 @@ Surface {
                         Accessible.name: "Increase volume by five percent"
                         onClicked: root.services.setVolume(root.services.volume + 0.05)
                     }
+                }
+                AudioDevices {
+                    objectName: "audioDevices"
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                    services: root.services
+                }
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: 1
+                    color: Theme.colors.border
+                }
+                MicrophoneControls {
+                    objectName: "microphoneControls"
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                    services: root.services
+                }
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: 1
+                    color: Theme.colors.border
+                }
+                MediaControls {
+                    objectName: "mediaControls"
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                    service: root.services.media
                 }
                 Rectangle {
                     Layout.fillWidth: true

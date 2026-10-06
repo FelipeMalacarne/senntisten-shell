@@ -26,9 +26,14 @@ SUITES = {
                    for theme in ("catppuccin-mocha", "gruvbox")],
     },
     "controls": {
-        "tests": ["quick_controls_integration.QuickControlsIntegration.test_real_quick_controls"],
+        "tests": [
+            "quick_controls_integration.QuickControlsIntegration.test_real_quick_controls",
+            "audio_media_integration.AudioMediaIntegration.test_audio_media_qml",
+            "connectivity_integration.ConnectivityIntegration.test_services_and_real_controls",
+        ],
         # AudioPanel has an intrinsic, font-dependent height, not the host height.
-        "images": [{"path": f"orbit-controls-{theme}.png", "width": 340, "min_height": 341}
+        "images": [{"path": f"orbit-controls-{prefix}{theme}.png", "width": 340, "min_height": 341}
+                   for prefix in ("", "network-", "bluetooth-")
                    for theme in ("catppuccin-mocha", "gruvbox")],
     },
     "settings": {

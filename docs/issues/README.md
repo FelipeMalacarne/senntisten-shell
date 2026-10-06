@@ -12,9 +12,9 @@ Keep each issue's status and acceptance checklist updated as work progresses.
 | 001 | [Close the native verification gap](001-native-verification.md) | P0 | Planned | Explicit approval for the test display |
 | 002 | [Implement stable shell commands](002-shell-commands.md) | P1 | Implemented | Existing desktop IPC; 001 gates activation |
 | 003 | [Export the opt-in Nix module](003-nix-module.md) | P1 | Implemented | 002; external activation separate |
-| 004 | [Implement connectivity controls](004-connectivity.md) | P2 | Planned | Confirm pinned provider APIs and capabilities |
+| 004 | [Implement connectivity controls](004-connectivity.md) | P2 | Partial | Integrated; secured-network/native pairing acceptance remains open |
 | 005 | [Implement appearance preferences](005-appearance-preferences.md) | P2 | Planned | Existing Theme service; explicit wallpaper ownership |
-| 006 | [Expand audio and add media controls](006-audio-media.md) | P2 | Planned | Existing PipeWire adapter; pinned MPRIS API |
+| 006 | [Expand audio and add media controls](006-audio-media.md) | P2 | Implemented | Isolated verification complete; live devices require approval |
 | 007 | [Add session actions and trusted lock delegation](007-session-lock.md) | P2 | Planned | 002, 003, and explicit provider/policy selection |
 
 P0 is the acceptance gate for deploying the current shell. P1 makes the existing
@@ -23,7 +23,9 @@ Implementation can proceed independently where dependencies permit, but provider
 activation remains a separate, explicit decision.
 
 Issues 002 and 003 are implemented with isolated behavioral and package evidence.
-Issue 001 remains the acceptance gate before provider activation. Issues 004-006
+Issue 001 remains the acceptance gate before provider activation. The parallel
+004/006 batch is integrated and passes the repository gates. Issue 004 retains
+explicit credential/pairing-agent limits; issue 005 remains planned. Further work
 can be developed independently where file ownership permits; 007 additionally
 requires explicit session-policy and trusted-provider decisions.
 

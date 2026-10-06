@@ -42,6 +42,7 @@ class RunningShell:
             "XDG_DATA_DIRS": str(self.base / "data-dirs"),
             "XDG_STATE_HOME": str(self.state),
             "DBUS_SESSION_BUS_ADDRESS": "unix:path=" + str(self.base / "no-session-bus"),
+            "DBUS_SYSTEM_BUS_ADDRESS": "unix:path=" + str(self.base / "no-system-bus"),
             "PIPEWIRE_REMOTE": str(self.base / "no-pipewire"),
             "QT_QPA_PLATFORM": "offscreen",
             "QT_QUICK_BACKEND": "software",

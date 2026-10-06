@@ -11,6 +11,7 @@ make ui-check
 make ui-check UI_ARGS='--suite launcher --suite settings'
 make ui-inspect UI_ARGS='--scene launcher --actions tests/ui-actions/launcher.json'
 make ui-inspect UI_ARGS='--scene controls --actions tests/ui-actions/controls.json'
+make ui-inspect UI_ARGS='--scene controls --actions tests/ui-actions/connectivity.json'
 make ui-inspect UI_ARGS='--scene controls --width 340 --height 320 --actions tests/ui-actions/controls-short.json'
 make ui-inspect UI_ARGS='--scene settings --actions tests/ui-actions/settings.json'
 make ui-inspect UI_ARGS='--scene bar --actions tests/ui-actions/bar.json'
@@ -28,8 +29,10 @@ failed suites and missing/invalid expected screenshots. It is not pixel-baseline
 comparison: agents still need to inspect the rendered images for visual quality.
 
 `ui-inspect` renders production `BarContent`, `LauncherContent`, `AudioPanel`, or
-the actual dedicated Settings `App`, not a browser mock. Bar and audio use clearly
-identified fixtures; the launcher discovers isolated `.desktop` files whose
+the actual dedicated Settings `App`, not a browser mock. Bar, output devices, and
+microphone use clearly identified fixtures. Connectivity and media see deliberately
+unavailable isolated D-Bus endpoints; provider-specific suites exercise controlled
+models and recorders. The launcher discovers isolated `.desktop` files whose
 native `execute()` calls only write recorder markers. Bar buttons/close/settings
 signals are counted, not routed into desktop layer surfaces. Use the existing
 desktop integration suite for controller routing.
@@ -119,7 +122,7 @@ make ui-inspect UI_ARGS='--scene launcher --empty-catalog --width 360 --height 3
 palette change should visibly report a save error; the generic Settings replay
 still checks the selected preview, not successful persistence.
 
-`--unavailable` disables the audio/compositor fixtures in bar/controls scenes;
+`--unavailable` disables output/microphone/compositor fixtures in bar/controls scenes;
 `--empty-catalog` removes the launcher fixture entries before startup.
 
 Check layout/clipping, readable feedback, alignment, icons, contrast, focus and

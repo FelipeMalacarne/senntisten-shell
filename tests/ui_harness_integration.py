@@ -80,20 +80,29 @@ class UiHarnessIntegration(unittest.TestCase):
             "schemaVersion": 1, "theme": "gruvbox", "reducedMotion": True,
         })
 
-    def test_controls_drag_wheel_and_disabled_target_failures_are_observable(self):
+    def test_controls_drag_and_connectivity_disclosure_are_observable(self):
         process, output = self.run_scene("controls", [
             {"op": "drag", "target": "audioVolume", "fromX": 0.3, "toX": 0.75},
             {"op": "click", "target": "audioMute"},
             {"op": "expect", "target": "audioMute", "property": "text", "value": "Unmute"},
             {"op": "click", "target": "quickNetwork"},
+            {"op": "expect", "target": "quickNetworkDetails", "property": "visible", "value": True},
         ])
-        self.assertNotEqual(process.returncode, 0, process.stdout + process.stderr)
-        final = self.snapshot(output, 4, "click")
-        self.assertIn("disabled", final["error"].lower())
-        self.assertTrue((output / "004-click.png").is_file(), "Keep failure screenshot")
-        self.assertFalse(json.loads((output / "manifest.json").read_text())["success"])
+        self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
+        final = self.snapshot(output, 5, "expect")
+        self.assertTrue(self.control(final, "quickNetworkDetails")["visible"])
         dragged = self.snapshot(output, 1, "drag")
         self.assertGreater(self.control(dragged, "audioVolume")["value"], 0.6)
+
+    def test_disabled_target_failures_are_observable(self):
+        process, output = self.run_scene("controls", [
+            {"op": "click", "target": "audioMute"},
+        ], "--unavailable")
+        self.assertNotEqual(process.returncode, 0, process.stdout + process.stderr)
+        final = self.snapshot(output, 1, "click")
+        self.assertIn("disabled", final["error"].lower())
+        self.assertTrue((output / "001-click.png").is_file(), "Keep failure screenshot")
+        self.assertFalse(json.loads((output / "manifest.json").read_text())["success"])
 
     def test_bar_fixture_signals_and_narrow_geometry(self):
         process, output = self.run_scene("bar", [
@@ -134,7 +143,11 @@ class UiHarnessIntegration(unittest.TestCase):
         self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
         snapshot = self.snapshot(output, 0, "initial")
         self.assertFalse(self.control(snapshot, "audioVolume")["enabled"])
+        self.assertEqual(self.control(snapshot, "audioVolume")["value"], 0)
         self.assertEqual(self.control(snapshot, "audioStatus")["text"], "PipeWire unavailable")
+        self.assertFalse(self.control(snapshot, "microphoneVolume")["enabled"])
+        self.assertEqual(self.control(snapshot, "microphoneVolume")["value"], 0)
+        self.assertEqual(self.control(snapshot, "microphoneMute")["text"], "Mute microphone")
         process, output = self.run_scene("launcher", [], "--empty-catalog")
         self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
         snapshot = self.snapshot(output, 0, "initial")
@@ -148,12 +161,17 @@ class UiHarnessIntegration(unittest.TestCase):
         self.assertTrue(json.loads((output / "manifest.json").read_text())["success"])
 
     def test_controls_use_the_production_panel_size_not_a_stretched_window(self):
-        process, output = self.run_scene("controls")
+        process, output = self.run_scene("controls", [], "--height", "1200")
         self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
         snapshot = self.snapshot(output, 0, "initial")
         panel = snapshot["controls"][0]["geometry"]
         self.assertEqual((panel["x"], panel["y"], panel["width"]), (20, 20, 300))
         self.assertLess(panel["height"], snapshot["viewport"]["height"] - 40)
+        process, output = self.run_scene("controls", [], "--width", "340", "--height", "320")
+        self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
+        snapshot = self.snapshot(output, 0, "initial")
+        self.assertEqual(snapshot["controls"][0]["geometry"]["height"], 280)
+        self.assertFalse(self.control(snapshot, "quickSettings")["inViewport"])
 
     def test_save_failure_is_injected_after_load_and_remains_visible(self):
         process, output = self.run_scene("settings", [
@@ -167,11 +185,16 @@ class UiHarnessIntegration(unittest.TestCase):
         self.assertTrue(self.control(final, "themeSaveStatus")["inViewport"])
 
     def test_documented_replays_remain_runnable(self):
-        for scene in ("launcher", "settings", "controls", "bar"):
-            with self.subTest(scene=scene):
-                actions = json.loads((ROOT / f"tests/ui-actions/{scene}.json").read_text())
+        for scene, replay in (("launcher", "launcher"), ("settings", "settings"),
+                              ("controls", "controls"), ("controls", "connectivity"),
+                              ("bar", "bar")):
+            with self.subTest(scene=scene, replay=replay):
+                actions = json.loads((ROOT / f"tests/ui-actions/{replay}.json").read_text())
                 process, _ = self.run_scene(scene, actions)
                 self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
+        actions = json.loads((ROOT / "tests/ui-actions/controls-short.json").read_text())
+        process, _ = self.run_scene("controls", actions, "--width", "340", "--height", "320")
+        self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
 
     def test_missing_executable_retains_a_failure_report(self):
         with mock.patch.dict(os.environ, {"SENNTISTEN_QUICKSHELL": "/no-senntisten-test-executable"}):

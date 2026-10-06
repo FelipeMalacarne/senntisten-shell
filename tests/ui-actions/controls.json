@@ -4,5 +4,6 @@
   {"op": "expect", "target": "audioMute", "property": "text", "value": "Unmute"},
   {"op": "click", "target": "audioMute"},
   {"op": "key", "key": "Tab"},
+  {"op": "wheel", "target": "quickControlsScroll", "dy": -600},
   {"op": "click", "target": "quickSettings"}
 ]

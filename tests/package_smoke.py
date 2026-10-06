@@ -42,6 +42,7 @@ class PackagedApplicationSmoke(unittest.TestCase):
                 "XDG_DATA_HOME": str(root / "data"),
                 "XDG_DATA_DIRS": str(root / "data-dirs"),
                 "DBUS_SESSION_BUS_ADDRESS": "unix:path=" + str(root / "no-session-bus"),
+                "DBUS_SYSTEM_BUS_ADDRESS": "unix:path=" + str(root / "no-system-bus"),
                 "PIPEWIRE_REMOTE": str(root / "no-pipewire"),
                 "QT_QPA_PLATFORM": "offscreen",
                 "QT_QUICK_BACKEND": "software",

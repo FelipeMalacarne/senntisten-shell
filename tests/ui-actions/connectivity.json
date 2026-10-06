@@ -1,0 +1,10 @@
+[
+  {"op": "click", "target": "quickNetwork"},
+  {"op": "expect", "target": "quickNetworkDetails", "property": "visible", "value": true},
+  {"op": "expect", "target": "quickBluetoothDetails", "property": "visible", "value": false},
+  {"op": "click", "target": "quickBluetooth"},
+  {"op": "expect", "target": "quickNetworkDetails", "property": "visible", "value": false},
+  {"op": "expect", "target": "quickBluetoothDetails", "property": "visible", "value": true},
+  {"op": "key", "key": "Space"},
+  {"op": "expect", "target": "quickBluetoothDetails", "property": "visible", "value": false}
+]

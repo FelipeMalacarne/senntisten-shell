@@ -14,13 +14,14 @@ Senntisten now provides a real Hyprland shell baseline:
   empty states, and native `DesktopEntry.execute()` launching.
 - Orbit's edge-integrated bar, local NixOS entry-point icon, soft launcher panels,
   and compact workspace dots with full keyboard and pointer targets.
-- Quick Controls with real output volume/mute and a separate Settings entry.
+- Quick Controls with connectivity details, output device selection, separate
+  microphone controls, real MPRIS playback, and a separate Settings entry.
 - A dedicated Settings window with Catppuccin Mocha and Gruvbox, live switching
   across all surfaces, plus persisted reduced motion and visible save failures.
 - A separate component playground for developing themes without starting the bar.
 
 It is intentionally not at Noctalia feature parity yet. Notifications, locking,
-network/Bluetooth panels, brightness, global compositor keybindings, wallpaper
+advanced device preferences, brightness, global compositor keybindings, wallpaper
 adapters, and Home Manager startup are later increments. Senntisten does not stop
 Noctalia/Caelestia or alter Hyprland/session configuration by itself.
 
@@ -109,7 +110,7 @@ remain explicitly unconfigured. See the [command contract](docs/shell-commands.m
 | Tray left click | Activate the item, or open menu-only items |
 | Tray right click / Shift+F10 | Open the native tray menu |
 | Tray middle click / wheel | Send secondary activation / scroll to the item |
-| Volume | Toggle Quick Controls, with output volume, mute, and ±5% controls |
+| Volume | Toggle Quick Controls for connectivity, output/microphone audio, and media |
 | Settings icon | Show or hide the dedicated Settings window |
 
 ### Launcher
@@ -124,15 +125,28 @@ available; a provider-specific Hyprland binding belongs in the later Nix integra
 
 ### Quick Controls and Settings
 
-Quick Controls contains real audio controls, not appearance preferences. Network
-and Bluetooth tiles are disabled and explicitly marked Planned; they do not show
-invented connection data. Its Settings entry opens the dedicated window. Closing
+Quick Controls contains frequent device and playback actions, not appearance
+preferences. Network and Bluetooth tiles disclose separate status/action lists;
+only one list expands at a time. Unavailable services and failed actions remain
+visible rather than showing invented connection data. Output selection and
+microphone volume/mute are separate from output volume. Changing volume never
+implicitly unmutes a device. Media shows real MPRIS metadata, with explicit player
+selection and disabled unsupported actions; no player means no fabricated track.
+Its Settings entry opens the dedicated window. Closing
 Settings returns to Quick Controls and restores focus to that entry when it was
 the invoking surface. Closing Settings never exits desktop mode.
 
-Settings offers live palette cards and reduced motion. Wallpaper, typography,
-density, and deeper desktop/launcher preferences are visibly planned rather than
-functional controls. The narrow window layout scrolls without hiding save errors.
+Connectivity uses the pinned native Quickshell NetworkManager and BlueZ adapters.
+Network actions support open or saved Wi-Fi and existing wired profiles. Provision
+new secured Wi-Fi credentials with your existing network tool; Senntisten does not
+collect or persist passwords. Bluetooth pairing relies on an existing system
+agent for PIN/confirmation prompts. Some native Bluetooth failures can only be
+reported as a timeout. These limits remain explicit in [issue 004](docs/issues/004-connectivity.md).
+
+Settings offers live palette cards and reduced motion. Deeper device preferences,
+wallpaper, typography, density, and deeper desktop/launcher preferences are visibly
+planned rather than functional controls. The narrow window layout scrolls without
+hiding save errors.
 
 ### Appearance and playground
 

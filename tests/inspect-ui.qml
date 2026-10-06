@@ -26,15 +26,63 @@ ShellRoot {
         onExited: (exitCode, exitStatus) => root.poisonExit = exitCode
     }
 
-    // Fixtures replace only provider boundaries. No live workspace/audio mutation.
+    QtObject {
+        id: fixtureOutput
+        property string description: "Isolated fixture output"
+        property string name: "fixture-output"
+        property string nickname: ""
+        property bool ready: true
+        property bool isSink: true
+        property bool isStream: false
+    }
+    QtObject {
+        id: fixtureHeadphones
+        property string description: "Isolated fixture headphones"
+        property string name: "fixture-headphones"
+        property string nickname: ""
+        property bool ready: true
+        property bool isSink: true
+        property bool isStream: false
+    }
+    // Audio/workspace fixtures never mutate live providers. Connectivity/media
+    // providers see only the runner's deliberately unavailable D-Bus endpoints.
     QtObject {
         id: fixtures
+        readonly property var network: NetworkService {}
+        readonly property var bluetooth: BluetoothService {}
+        readonly property var media: MediaService {}
         property bool audioAvailable: Quickshell.env("SENNTISTEN_INSPECT_UNAVAILABLE") !== "1"
-        property real volume: 0.42
+        property real volume: audioAvailable ? 0.42 : 0
         readonly property int volumePercent: Math.round(volume * 100)
         property bool muted: false
-        property string outputName: "Isolated fixture output"
+        readonly property string outputName: audioAvailable && sink ? sink.description : ""
         readonly property string audioStatus: audioAvailable ? "" : "PipeWire unavailable"
+        readonly property var outputs: audioAvailable ? [fixtureOutput, fixtureHeadphones] : []
+        property var sink: fixtureOutput
+        readonly property bool microphoneAvailable: audioAvailable
+        property real microphoneVolume: microphoneAvailable ? 0.56 : 0
+        readonly property int microphoneVolumePercent: Math.round(microphoneVolume * 100)
+        property bool microphoneMuted: microphoneAvailable
+        readonly property string microphoneName: microphoneAvailable ? "Isolated fixture microphone" : ""
+        readonly property string microphoneStatus: microphoneAvailable ? "" : "PipeWire unavailable"
+        function selectOutput(node) {
+            if (!audioAvailable || !outputs.includes(node))
+                return false;
+            sink = node;
+            return true;
+        }
+        function setMicrophoneVolume(value) {
+            if (!microphoneAvailable || typeof value !== "number" || !Number.isFinite(value))
+                return false;
+            microphoneVolume = Math.max(0, Math.min(1, value));
+            return true;
+        }
+        function toggleMicrophoneMute() {
+            if (!microphoneAvailable)
+                return false;
+            microphoneMuted = !microphoneMuted;
+            return true;
+        }
         property bool compositorAvailable: audioAvailable
         property var activeToplevel: ({
                 title: "Fixture editor",

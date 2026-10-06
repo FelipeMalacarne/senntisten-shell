@@ -22,7 +22,10 @@ shell/PlaygroundRoot.qml     isolated normal-window development entrypoint
 shell/desktop/Bar.qml        per-screen layer surface and Quick Controls popup
 shell/desktop/AudioPanel.qml Quick Controls with live audio and a Settings entry
 shell/desktop/BarContent.qml live workspaces, tray, audio, clock, and actions
-shell/desktop/BarServices.qml native Hyprland, SystemTray, and PipeWire adapter
+shell/desktop/BarServices.qml native providers and connectivity/media composition
+shell/desktop/NetworkService.qml network status and deliberate actions
+shell/desktop/BluetoothService.qml Bluetooth adapter/device actions
+shell/desktop/MediaService.qml native MPRIS selection, metadata, and playback
 shell/desktop/Launcher.qml   focused overlay layer surface
 shell/desktop/LauncherContent.qml desktop-entry search and activation UI
 shell/components/            shared presentation components
@@ -84,16 +87,29 @@ while the body scrolls on short screens. The output slider has an explicit thin
 track and round thumb instead of stretching its track to the control height.
 
 Quick Controls and Settings are distinct production surfaces. Quick Controls
-provides live default-output audio controls. Network and Bluetooth are disabled
-Planned tiles, with no fabricated status. Brightness, media, and Do Not Disturb
+provides live output volume/mute and device selection, separate microphone
+controls, and real MPRIS player selection and supported playback actions. Network
+and Bluetooth tiles expand mutually exclusive details without fabricating status.
+Service boundaries own pending/error state and deliberate actions; presentation
+stays in per-feature controls composed by `AudioPanel`. Brightness and Do Not Disturb
 remain later work. Its Settings entry opens a dedicated window; general
 appearance preferences do not belong in the control panel.
+
+Connectivity uses the pinned `Quickshell.Networking` NetworkManager backend and
+`Quickshell.Bluetooth` BlueZ API, not command polling. Open/saved Wi-Fi and existing
+wired profiles are supported; new secured-profile provisioning remains external.
+Bluetooth PIN/confirmation prompts rely on an existing system agent. Native
+operation flags/state changes drive pending actions, with bounded timeouts where
+the pinned API cannot surface a precise D-Bus error. No credentials enter shell
+appearance state or diagnostic artifacts. PipeWire tracks relevant native nodes;
+media uses `Quickshell.Services.Mpris` and never downloads artwork URLs.
 
 Settings provides room for appearance, wallpaper, typography, interface density,
 bar layout, launcher preferences, accessibility, and deeper feature configuration.
 Palette selection and reduced motion are implemented using the existing safe
 appearance service. The other sections/preferences are disabled Planned controls.
-Save errors and unsupported-state warnings stay visible outside scrolling content.
+Deeper device preferences remain planned, not hidden network/audio configuration
+writes. Save errors and unsupported-state warnings stay visible outside scrolling content.
 Closing Settings restores the invoking Quick Controls entry when applicable,
 without terminating the desktop. Launcher and Settings use separate monitor
 targets so opening one does not move an already open surface to another monitor.

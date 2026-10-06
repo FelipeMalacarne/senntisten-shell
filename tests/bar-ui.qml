@@ -30,6 +30,8 @@ ShellRoot {
         QtObject {
             id: sink
             property bool ready: true
+            property bool isSink: true
+            property bool isStream: false
             property string description: "Test output"
             property string nickname: ""
             property string name: "test-output"
@@ -42,6 +44,11 @@ ShellRoot {
             id: pipewire
             property bool ready: true
             property var defaultAudioSink: sink
+            property var defaultAudioSource: null
+            property var preferredDefaultAudioSink: sink
+            property var nodes: QtObject {
+                property var values: [sink]
+            }
         }
         QtObject {
             id: tray
@@ -290,6 +297,14 @@ ShellRoot {
                 tryVerify(() => Math.abs(sink.audio.volume - 0.8) < 0.0001);
                 mouseClick(findChild(panel, "audioClose"));
                 compare(closeAudioSpy.count, 1);
+            }
+            function test_bar_services_compose_native_connectivity_and_media_boundaries() {
+                const services = barLoader.item.services;
+                for (const name of ["network", "bluetooth", "media"])
+                    verify(services[name] !== undefined && services[name] !== null, "Bar services must compose " + name);
+                compare(services.network.available, false);
+                compare(services.bluetooth.available, false);
+                compare(services.media.available, false);
             }
             function test_audio_unavailability_is_visible_and_never_mutates_stale_nodes() {
                 const services = barLoader.item.services;

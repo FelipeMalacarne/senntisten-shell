@@ -49,6 +49,7 @@ class BarIntegration(unittest.TestCase):
                 "QT_QUICK_BACKEND": "software",
                 "QT_QUICK_CONTROLS_STYLE": "Basic",
                 "DBUS_SESSION_BUS_ADDRESS": "unix:path=" + str(base / "no-session-bus"),
+                "DBUS_SYSTEM_BUS_ADDRESS": "unix:path=" + str(base / "no-system-bus"),
                 "PIPEWIRE_REMOTE": str(base / "no-pipewire"),
                 "NO_COLOR": "1",
             })
