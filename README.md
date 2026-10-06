@@ -252,6 +252,8 @@ or a network service. Use `--pid` instead of `--path` to target a specific insta
 ## Structure and next steps
 
 See [Architecture](docs/architecture.md) for boundaries and implementation notes.
+The [implementation backlog](docs/issues/README.md) tracks the next increments,
+their acceptance criteria, dependencies, and activation boundaries.
 The next increment is an opt-in Home Manager module and `senntisten` provider in
 `nix-config`, including the launcher keybinding. Notification/lock ownership remains
 a later decision rather than being bundled into activation.
